@@ -8,6 +8,7 @@ type Dictionary = Record<string, string>;
 
 const dictionaries: Record<Lang, Dictionary> = {
   en: {
+    "nav.home": "Home",
     "nav.ideas": "Ideas",
     "nav.tasks": "Tasks",
     "nav.knowledge": "Knowledge",
@@ -15,6 +16,9 @@ const dictionaries: Record<Lang, Dictionary> = {
     "nav.audit": "Audit",
     "lang.en": "EN",
     "lang.zh": "ZH",
+
+    "home.title": "Home Dashboard",
+    "home.subtitle": "Overview tasks, knowledge, and changes in one place.",
 
     "tasks.title": "Tasks",
     "tasks.subtitle": "Agent task desk: filter by priority/status/category and review details.",
@@ -392,6 +396,7 @@ const dictionaries: Record<Lang, Dictionary> = {
     "audit.eventMetadata": "Metadata"
   },
   zh: {
+    "nav.home": "首页",
     "nav.ideas": "想法",
     "nav.tasks": "任务",
     "nav.knowledge": "知识",
@@ -399,6 +404,9 @@ const dictionaries: Record<Lang, Dictionary> = {
     "nav.audit": "审计",
     "lang.en": "EN",
     "lang.zh": "中文",
+
+    "home.title": "首页看板",
+    "home.subtitle": "在一个页面汇总任务、知识与变更概览。",
 
     "tasks.title": "任务",
     "tasks.subtitle": "Agent 任务台：按优先级/状态/分类筛选并审阅详情。",

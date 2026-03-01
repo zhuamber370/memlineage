@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { useI18n } from "../i18n";
 
 const links = [
+  { href: "/", key: "nav.home" },
   { href: "/tasks", key: "nav.tasks" },
   { href: "/knowledge", key: "nav.knowledge" },
   { href: "/changes", key: "nav.changes" }
