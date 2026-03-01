@@ -25,6 +25,11 @@
     - add-step inline form now keeps only title + status
     - edge relation selection/edge inspector entry removed
     - edge line keeps pure connection display only
+- Home Dashboard (`/`) for personal overview:
+  - global snapshot + `Task / Changes / Knowledge` three-board layout
+  - focus task ranking rule: `P0 + in_progress` first, then due date, then latest update, then title tie-break
+  - dashboard cards deep-link to target pages with query-based filter hydration
+  - per-board loading/error/empty isolation to avoid single-source failure taking down the whole page
 - Knowledge workspace using `/api/v1/knowledge`:
   - category model: `ops_manual | mechanism_spec | decision_record`
   - status model: `active | archived`
