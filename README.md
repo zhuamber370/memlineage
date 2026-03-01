@@ -131,9 +131,9 @@ If you do not approve, reject it in `/changes` (or just do not commit).
 
 > Screenshots use synthetic test data.
 
-![Changes UI: dry-run diff preview](docs/assets/screenshots/changes-ui-dryrun.png)
+![Home dashboard (synthetic test data)](docs/assets/screenshots/home-dashboard.png)
 
-![Changes UI: committed](docs/assets/screenshots/changes-ui-committed.png)
+![Changes UI: dry-run diff preview](docs/assets/screenshots/changes-ui-dryrun.png)
 
 ![Tasks dashboard (synthetic test data)](docs/assets/screenshots/tasks-dashboard.png)
 
