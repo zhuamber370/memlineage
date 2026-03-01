@@ -56,6 +56,7 @@ type DetailDraft = {
 const PRIORITY_FILTERS: FilterPriority[] = ["all", "P0", "P1", "P2", "P3"];
 const STATUS_FILTERS: FilterStatus[] = ["all", "todo", "in_progress", "done", "cancelled", "archived"];
 const STATUS_GROUP_ORDER: TaskStatus[] = ["todo", "in_progress", "done", "cancelled"];
+const WORKSPACE_MODES = ["manage", "studio"] as const;
 
 export default function TasksPage() {
   const [title, setTitle] = useState("");
@@ -134,6 +135,29 @@ export default function TasksPage() {
   );
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const nextStatus = params.get("status");
+    const nextPriority = params.get("priority");
+    const nextTopicId = params.get("topic_id");
+    const nextWorkspace = params.get("workspace");
+    const nextTaskId = params.get("task_id");
+
+    if (nextStatus && STATUS_FILTERS.includes(nextStatus as FilterStatus)) {
+      setFilterStatus(nextStatus as FilterStatus);
+    }
+    if (nextPriority && PRIORITY_FILTERS.includes(nextPriority as FilterPriority)) {
+      setFilterPriority(nextPriority as FilterPriority);
+    }
+    if (nextTopicId?.trim()) {
+      setFilterTopicId(nextTopicId.trim());
+    }
+    if (nextWorkspace && WORKSPACE_MODES.includes(nextWorkspace as (typeof WORKSPACE_MODES)[number])) {
+      setWorkspaceMode(nextWorkspace as (typeof WORKSPACE_MODES)[number]);
+    }
+    if (nextTaskId?.trim()) {
+      setSelectedTaskId(nextTaskId.trim());
+    }
+
     void onLoadTopics();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

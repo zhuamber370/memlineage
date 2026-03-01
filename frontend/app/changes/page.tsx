@@ -23,6 +23,7 @@ type ChangeListResp = {
   page_size: number;
   total: number;
 };
+type ChangeFilterStatus = "proposed" | "committed" | "rejected";
 
 type ChangeActionDetail = {
   action_id: string;
@@ -107,6 +108,7 @@ export default function ChangesPage() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [pending, setPending] = useState<"" | "refresh" | "detail" | "commit" | "undo" | "reject">("");
+  const [statusFilter, setStatusFilter] = useState<ChangeFilterStatus>("proposed");
 
   const entitySummaryEntries = useMemo(
     () =>
@@ -128,9 +130,17 @@ export default function ChangesPage() {
   );
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const nextStatus = params.get("status");
+    if (nextStatus === "proposed" || nextStatus === "committed" || nextStatus === "rejected") {
+      setStatusFilter(nextStatus);
+    }
+  }, []);
+
+  useEffect(() => {
     void loadInbox();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [statusFilter]);
 
   useEffect(() => {
     if (!selectedId) {
@@ -146,7 +156,7 @@ export default function ChangesPage() {
     setNotice("");
     setPending("refresh");
     try {
-      const listed = await apiGet<ChangeListResp>("/api/v1/changes?page=1&page_size=100&status=proposed");
+      const listed = await apiGet<ChangeListResp>(`/api/v1/changes?page=1&page_size=100&status=${statusFilter}`);
       setList(listed.items);
       setSelectedId((prev) => {
         if (prev && listed.items.some((item) => item.change_set_id === prev)) return prev;

@@ -49,11 +49,33 @@ export default function KnowledgePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [filtersReady, setFiltersReady] = useState(false);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const nextStatus = params.get("status");
+    const nextCategory = params.get("category");
+
+    if (nextStatus === "active" || nextStatus === "archived") {
+      setStatusFilter(nextStatus);
+    }
+    if (
+      nextCategory === "all" ||
+      nextCategory === "ops_manual" ||
+      nextCategory === "mechanism_spec" ||
+      nextCategory === "decision_record"
+    ) {
+      setCategoryFilter(nextCategory);
+    }
+
+    setFiltersReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!filtersReady) return;
     void onRefreshList();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, categoryFilter, searchQuery]);
+  }, [filtersReady, statusFilter, categoryFilter, searchQuery]);
 
   function formatTime(value?: string): string {
     return formatDateTime(value, lang);
