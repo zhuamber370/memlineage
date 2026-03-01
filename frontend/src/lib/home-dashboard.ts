@@ -34,6 +34,8 @@ export type HomeSnapshot = {
     blockedCount: number;
     dueTodayCount: number;
     focus: TaskSummary[];
+    statusCounts: Record<string, number>;
+    inProgressPriorityCounts: Record<string, number>;
   };
   knowledge: {
     byCategory: Record<string, number>;
@@ -77,14 +79,12 @@ export function rankFocusTasks(tasks: TaskSummary[]): TaskSummary[] {
     const bInProgress = b.status === "in_progress";
     if (aInProgress !== bInProgress) return aInProgress ? -1 : 1;
 
-    if (aInProgress && bInProgress) {
-      const aDue = toTime(a.due);
-      const bDue = toTime(b.due);
-      if (aDue !== bDue) {
-        if (!aDue) return 1;
-        if (!bDue) return -1;
-        return aDue - bDue;
-      }
+    const aDue = toTime(a.due);
+    const bDue = toTime(b.due);
+    if (aDue !== bDue) {
+      if (!aDue) return 1;
+      if (!bDue) return -1;
+      return aDue - bDue;
     }
 
     const updatedDiff = toTime(b.updated_at) - toTime(a.updated_at);
@@ -131,6 +131,18 @@ export function buildHomeSnapshot(input: {
     return acc;
   }, {});
 
+  const statusCounts = tasks.reduce<Record<string, number>>((acc, task) => {
+    const key = task.status || "unknown";
+    acc[key] = (acc[key] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  const inProgressPriorityCounts = taskInProgress.reduce<Record<string, number>>((acc, task) => {
+    const key = task.priority || "none";
+    acc[key] = (acc[key] ?? 0) + 1;
+    return acc;
+  }, {});
+
   const recentKnowledge = [...knowledge]
     .sort((a, b) => toTime(b.updated_at) - toTime(a.updated_at))
     .slice(0, 5);
@@ -156,7 +168,9 @@ export function buildHomeSnapshot(input: {
     task: {
       blockedCount: tasks.filter((item) => Boolean(item.blocked_by_task_id)).length,
       dueTodayCount: tasks.filter((item) => isDueToday(item.due)).length,
-      focus: rankFocusTasks(tasks).slice(0, 5)
+      focus: rankFocusTasks(tasks).slice(0, 5),
+      statusCounts,
+      inProgressPriorityCounts
     },
     knowledge: {
       byCategory,

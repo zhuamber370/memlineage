@@ -94,11 +94,18 @@ a {
     var(--panel);
 }
 
-.homeDashboardGrid {
+.homeDashboardLayout {
   display: grid;
-  grid-template-columns: repeat(2, minmax(280px, 1fr));
+  grid-template-columns: minmax(640px, 1.35fr) minmax(320px, 0.9fr);
   gap: 12px;
   align-items: start;
+}
+
+.homeMainColumn,
+.homeSideColumn {
+  display: grid;
+  gap: 12px;
+  align-content: start;
 }
 
 .homePanel {
@@ -106,9 +113,9 @@ a {
   gap: 10px;
 }
 
-.homeMetricGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+.homeMetricRail {
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -119,6 +126,8 @@ a {
   padding: 8px 10px;
   display: grid;
   gap: 4px;
+  min-width: 140px;
+  flex: 1 1 150px;
 }
 
 .homeMetricCard:hover,
@@ -127,9 +136,103 @@ a {
   outline: none;
 }
 
+.homeChartGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+.homeChartCard {
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  padding: 8px 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.homeChartRows {
+  display: grid;
+  gap: 6px;
+}
+
+.homeChartRow {
+  display: grid;
+  grid-template-columns: minmax(74px, 1fr) minmax(90px, 2.4fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.homeChartLabel {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.homeChartTrack {
+  border: 1px solid var(--line);
+  background: #f7f5f1;
+  border-radius: 999px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.homeChartFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #2e6ce0 0%, #b5462f 100%);
+}
+
+.homeChartValue {
+  min-width: 18px;
+  text-align: right;
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+
 .homeList {
   display: grid;
   gap: 8px;
+}
+
+.homeFocusList {
+  max-height: 460px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.homeFocusItem {
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  background: #fffdf8;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.homeFocusActions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.homeDateCompact {
+  display: none;
+}
+
+@media (max-width: 1400px) {
+  .homeDateFull {
+    display: none;
+  }
+
+  .homeDateCompact {
+    display: inline;
+  }
 }
 
 .homeListItem {
@@ -139,6 +242,14 @@ a {
   padding: 10px;
   display: grid;
   gap: 8px;
+}
+
+.homeCompactList .homeListItem {
+  padding: 8px;
+}
+
+.homeCategoryBadges {
+  margin-top: 0;
 }
 
 .h1 {
@@ -2233,8 +2344,28 @@ a {
     border-bottom: 2px solid var(--line);
   }
 
-  .homeDashboardGrid {
+  .homeDashboardLayout {
     grid-template-columns: 1fr;
+  }
+
+  .homeChartGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .homeFocusItem {
+    grid-template-columns: 1fr;
+  }
+
+  .homeFocusActions {
+    justify-content: flex-start;
+  }
+
+  .homeDateFull {
+    display: none;
+  }
+
+  .homeDateCompact {
+    display: inline;
   }
 
   .taskLayout {

@@ -16,3 +16,14 @@ export function formatDateTime(value: string | null | undefined, lang: string): 
     hour12: false
   });
 }
+
+export function formatDate(value: string | null | undefined, lang: string): string {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString(localeFromLang(lang), {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  });
+}
