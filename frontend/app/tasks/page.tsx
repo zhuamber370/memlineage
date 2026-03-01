@@ -1,7 +1,8 @@
 /* eslint-disable react/jsx-no-bind */
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 import { TaskExecutionPanel } from "../../src/components/task-execution-panel";
 import { apiDelete, apiGet, apiPatch, apiPost } from "../../src/lib/api";
@@ -55,10 +56,21 @@ type DetailDraft = {
 
 const PRIORITY_FILTERS: FilterPriority[] = ["all", "P0", "P1", "P2", "P3"];
 const STATUS_FILTERS: FilterStatus[] = ["all", "todo", "in_progress", "done", "cancelled", "archived"];
-const STATUS_GROUP_ORDER: TaskStatus[] = ["todo", "in_progress", "done", "cancelled"];
+const STATUS_GROUP_ORDER_DEFAULT: TaskStatus[] = ["todo", "in_progress", "done", "cancelled"];
+const STATUS_GROUP_ORDER_ALL_FILTERS: TaskStatus[] = ["in_progress", "todo", "done", "cancelled"];
 const WORKSPACE_MODES = ["manage", "studio"] as const;
 
 export default function TasksPage() {
+  return (
+    <Suspense fallback={<section className="card taskBoard taskBoardV3"><p className="meta">...</p></section>}>
+      <TasksPageInner />
+    </Suspense>
+  );
+}
+
+function TasksPageInner() {
+  const searchParams = useSearchParams();
+  const searchQueryString = searchParams.toString();
   const [title, setTitle] = useState("");
   const [priority, setPriority] = useState<TaskPriority>("P2");
   const [due, setDue] = useState("");
@@ -84,6 +96,8 @@ export default function TasksPage() {
   const [notice, setNotice] = useState("");
   const [detailDraft, setDetailDraft] = useState<DetailDraft | null>(null);
   const [ready, setReady] = useState(false);
+  const preferredTaskIdRef = useRef<string | null>(null);
+  const refreshRequestIdRef = useRef(0);
 
   const { t, lang } = useI18n();
 
@@ -110,13 +124,18 @@ export default function TasksPage() {
     });
   }, [tasks, searchQuery]);
 
+  const hasMultipleStatuses = useMemo(
+    () => new Set(filteredTasks.map((task) => task.status)).size > 1,
+    [filteredTasks]
+  );
+
   const groupedTasks = useMemo(
     () =>
-      STATUS_GROUP_ORDER.map((status) => ({
+      (hasMultipleStatuses ? STATUS_GROUP_ORDER_ALL_FILTERS : STATUS_GROUP_ORDER_DEFAULT).map((status) => ({
         status,
         items: filteredTasks.filter((task) => task.status === status)
       })),
-    [filteredTasks]
+    [filteredTasks, hasMultipleStatuses]
   );
 
   const visibleGroups = useMemo(
@@ -125,7 +144,7 @@ export default function TasksPage() {
   );
 
   const selectedTask = useMemo(
-    () => tasks.find((task) => task.id === selectedTaskId) ?? tasks[0] ?? null,
+    () => tasks.find((task) => task.id === selectedTaskId) ?? null,
     [tasks, selectedTaskId]
   );
 
@@ -135,12 +154,18 @@ export default function TasksPage() {
   );
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+    void onLoadTopics();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchQueryString);
     const nextStatus = params.get("status");
     const nextPriority = params.get("priority");
     const nextTopicId = params.get("topic_id");
     const nextWorkspace = params.get("workspace");
     const nextTaskId = params.get("task_id");
+    const nextDetail = params.get("detail");
 
     if (nextStatus && STATUS_FILTERS.includes(nextStatus as FilterStatus)) {
       setFilterStatus(nextStatus as FilterStatus);
@@ -155,12 +180,14 @@ export default function TasksPage() {
       setWorkspaceMode(nextWorkspace as (typeof WORKSPACE_MODES)[number]);
     }
     if (nextTaskId?.trim()) {
-      setSelectedTaskId(nextTaskId.trim());
+      const trimmedTaskId = nextTaskId.trim();
+      preferredTaskIdRef.current = trimmedTaskId;
+      setSelectedTaskId(trimmedTaskId);
     }
-
-    void onLoadTopics();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (nextDetail === "open") {
+      setStudioDetailOpen(true);
+    }
+  }, [searchQueryString]);
 
   useEffect(() => {
     if (!ready) return;
@@ -176,16 +203,15 @@ export default function TasksPage() {
 
   useEffect(() => {
     setSelectedTaskId((prev) => {
+      if (!tasks.length) return prev;
+      const preferred = preferredTaskIdRef.current;
+      if (preferred && tasks.some((task) => task.id === preferred)) return preferred;
       if (prev && tasks.some((task) => task.id === prev)) return prev;
-      return tasks[0]?.id ?? null;
+      const fallback = tasks[0]?.id ?? null;
+      if (fallback) preferredTaskIdRef.current = fallback;
+      return fallback;
     });
   }, [tasks]);
-
-  useEffect(() => {
-    if (workspaceMode === "studio" && !selectedTask) {
-      setWorkspaceMode("manage");
-    }
-  }, [workspaceMode, selectedTask]);
 
   useEffect(() => {
     if (!selectedTask) {
@@ -285,7 +311,8 @@ export default function TasksPage() {
     }
   }
 
-  async function onRefresh() {
+  async function onRefresh(options?: { preferredTaskId?: string | null }) {
+    const requestId = ++refreshRequestIdRef.current;
     setError("");
     setNotice("");
     setLoading(true);
@@ -297,16 +324,26 @@ export default function TasksPage() {
       if (filterTopicId !== "all") params.set("topic_id", filterTopicId);
 
       const listed = await apiGet<TaskList>(`/api/v1/tasks?${params.toString()}`);
+      if (requestId !== refreshRequestIdRef.current) return;
+      if (options?.preferredTaskId?.trim()) {
+        preferredTaskIdRef.current = options.preferredTaskId.trim();
+      }
       setTasks(listed.items);
       setTotal(listed.total);
       setSelectedIds((prev) => prev.filter((id) => listed.items.some((item) => item.id === id)));
       setSelectedTaskId((prev) => {
+        const preferred = preferredTaskIdRef.current;
+        if (preferred && listed.items.some((item) => item.id === preferred)) return preferred;
         if (prev && listed.items.some((item) => item.id === prev)) return prev;
-        return listed.items[0]?.id ?? null;
+        const fallback = listed.items[0]?.id ?? null;
+        if (fallback) preferredTaskIdRef.current = fallback;
+        return fallback;
       });
     } catch (e) {
+      if (requestId !== refreshRequestIdRef.current) return;
       setError(userErrorMessage(e as Error));
     } finally {
+      if (requestId !== refreshRequestIdRef.current) return;
       setLoading(false);
     }
   }
@@ -477,8 +514,13 @@ export default function TasksPage() {
     return formatDateTime(value, lang);
   }
 
-  function onOpenStudio(taskId: string) {
+  function onSelectTask(taskId: string) {
+    preferredTaskIdRef.current = taskId;
     setSelectedTaskId(taskId);
+  }
+
+  function onOpenStudio(taskId: string) {
+    onSelectTask(taskId);
     setWorkspaceMode("studio");
     setStudioDetailOpen(false);
     setError("");
@@ -492,7 +534,7 @@ export default function TasksPage() {
     setNotice("");
   }
 
-  const isStudioMode = workspaceMode === "studio" && selectedTask !== null;
+  const isStudioMode = workspaceMode === "studio";
 
   return (
     <section className="card taskBoard taskBoardV3">
@@ -648,7 +690,7 @@ export default function TasksPage() {
                           <div
                             key={task.id}
                             className={`taskRow ${selectedTaskId === task.id ? "taskRowActive" : ""}`}
-                            onClick={() => setSelectedTaskId(task.id)}
+                            onClick={() => onSelectTask(task.id)}
                           >
                             {!isArchivedView ? (
                               <input
@@ -936,6 +978,7 @@ export default function TasksPage() {
             </section>
 
             <TaskExecutionPanel
+              key={selectedTask.id}
               taskId={selectedTask.id}
               onTaskStarted={(status) => onExecutionTaskStatusChange(selectedTask.id, status)}
             />

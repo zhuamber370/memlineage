@@ -183,6 +183,9 @@ export function TaskExecutionPanel({ taskId, onTaskStarted }: { taskId: string; 
 
   const dagViewportRef = useRef<HTMLDivElement | null>(null);
   const nodeMenuPanelRef = useRef<HTMLDivElement | null>(null);
+  const flowRequestIdRef = useRef(0);
+  const graphRequestIdRef = useRef(0);
+  const inspectorLogsRequestIdRef = useRef(0);
   const panSessionRef = useRef<{
     pointerId: number;
     startClientX: number;
@@ -481,36 +484,44 @@ export function TaskExecutionPanel({ taskId, onTaskStarted }: { taskId: string; 
   }, []);
 
   async function loadFlows() {
+    const requestId = ++flowRequestIdRef.current;
     setLoadingFlows(true);
     setError("");
     try {
       const result = await apiGet<FlowListOut>(
         `/api/v1/routes?page=1&page_size=100&task_id=${encodeURIComponent(taskId)}`
       );
+      if (requestId !== flowRequestIdRef.current) return;
       setFlows(result.items);
       const primary = pickPrimaryFlow(result.items);
       setSelectedFlowId(primary?.id ?? "");
     } catch (e) {
+      if (requestId !== flowRequestIdRef.current) return;
       setError((e as Error).message);
       setFlows([]);
       setSelectedFlowId("");
     } finally {
+      if (requestId !== flowRequestIdRef.current) return;
       setLoadingFlows(false);
     }
   }
 
   async function loadGraph(routeId: string) {
+    const requestId = ++graphRequestIdRef.current;
     setLoadingGraph(true);
     setError("");
     try {
       const result = await apiGet<FlowGraphOut>(`/api/v1/routes/${routeId}/graph`);
+      if (requestId !== graphRequestIdRef.current) return;
       setSteps(result.nodes.map(normalizeStepForDag));
       setEdges(result.edges);
     } catch (e) {
+      if (requestId !== graphRequestIdRef.current) return;
       setError((e as Error).message);
       setSteps([]);
       setEdges([]);
     } finally {
+      if (requestId !== graphRequestIdRef.current) return;
       setLoadingGraph(false);
     }
   }
@@ -520,15 +531,19 @@ export function TaskExecutionPanel({ taskId, onTaskStarted }: { taskId: string; 
       setEntityLogs([]);
       return;
     }
+    const requestId = ++inspectorLogsRequestIdRef.current;
     setLoadingInspectorLogs(true);
     setError("");
     try {
       const result = await apiGet<EntityLogListOut>(logBasePath);
+      if (requestId !== inspectorLogsRequestIdRef.current) return;
       setEntityLogs(result.items);
     } catch (e) {
+      if (requestId !== inspectorLogsRequestIdRef.current) return;
       setError((e as Error).message);
       setEntityLogs([]);
     } finally {
+      if (requestId !== inspectorLogsRequestIdRef.current) return;
       setLoadingInspectorLogs(false);
     }
   }
