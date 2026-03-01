@@ -73,7 +73,20 @@ export function rankFocusTasks(tasks: TaskSummary[]): TaskSummary[] {
     const bInProgress = b.status === "in_progress";
     if (aInProgress !== bInProgress) return aInProgress ? -1 : 1;
 
-    return toTime(b.updated_at) - toTime(a.updated_at);
+    if (aInProgress && bInProgress) {
+      const aDue = toTime(a.due);
+      const bDue = toTime(b.due);
+      if (aDue !== bDue) {
+        if (!aDue) return 1;
+        if (!bDue) return -1;
+        return aDue - bDue;
+      }
+    }
+
+    const updatedDiff = toTime(b.updated_at) - toTime(a.updated_at);
+    if (updatedDiff !== 0) return updatedDiff;
+
+    return a.title.localeCompare(b.title);
   });
 }
 

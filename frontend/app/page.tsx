@@ -80,6 +80,16 @@ export default function HomeDashboardPage() {
     if (task.priority === "P0") {
       params.set("priority", "P0");
     }
+    params.set("task_id", task.id);
+    return `/tasks?${params.toString()}`;
+  }
+
+  function taskStudioLink(task: TaskSummary): string {
+    const params = new URLSearchParams({ status: "in_progress", workspace: "studio" });
+    if (task.priority === "P0") {
+      params.set("priority", "P0");
+    }
+    params.set("task_id", task.id);
     return `/tasks?${params.toString()}`;
   }
 
@@ -154,7 +164,7 @@ export default function HomeDashboardPage() {
                     <Link href={taskDeepLink(task)} className="badge">
                       {t("home.tasks.openTask")}
                     </Link>
-                    <Link href={taskDeepLink(task)} className="badge">
+                    <Link href={taskStudioLink(task)} className="badge">
                       {t("home.tasks.openStudio")}
                     </Link>
                   </div>
