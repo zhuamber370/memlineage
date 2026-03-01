@@ -40,6 +40,15 @@
 - Task 7 文档差异校验：
   - `git diff -- docs/reports`
 
+## 2026-03-02 稳定性修复（验收后）
+- 修复 `Open Studio` 跳转偶发串台：URL `task_id` 变化但页面仍停留旧任务的问题。
+- 修复 `TaskExecutionPanel` 在切任务时的旧请求回写，避免 DAG/日志展示到错误任务。
+- 修复任务列表在显示多状态时的分组顺序，统一为 `in_progress -> todo -> done -> cancelled`。
+- 清理本次排查产生的 `test://` 临时任务数据，恢复到真实数据集。
+- 验证：
+  - `cd frontend && npm run build`（PASS）
+  - Playwright 深链与列表点击回归：不同 `task_id` 可稳定进入对应任务详情（PASS）
+
 ## 提交记录
 - `6597d5f` feat(frontend): scaffold home dashboard route and nav entry
 - `5fedd5f` feat(frontend): add home dashboard aggregation and focus ranking helpers
@@ -47,3 +56,4 @@
 - `7ff1cbe` feat(frontend): enforce deterministic focus task ordering and actions
 - `bebcd80` feat(frontend): support query-driven filter hydration for dashboard deep links
 - `34f1ddc` fix(frontend): harden home dashboard loading error and empty states
+- `14fdcaa` fix: tasks studio selection race and stale graph state

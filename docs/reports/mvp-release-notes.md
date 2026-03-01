@@ -1,7 +1,7 @@
 > Documentation Status: Current
-> Last synced: 2026-03-01
+> Last synced: 2026-03-02
 
-# MVP Release Notes (Synced 2026-03-01)
+# MVP Release Notes (Synced 2026-03-02)
 
 ## Delivered
 - Backend APIs for `topics/tasks/cycles/notes/knowledge/journals/inbox/links/ideas/routes/changes/context/audit`
@@ -30,6 +30,7 @@
   - focus task ranking rule: `P0 + in_progress` first, then due date, then latest update, then title tie-break
   - dashboard cards deep-link to target pages with query-based filter hydration
   - per-board loading/error/empty isolation to avoid single-source failure taking down the whole page
+  - post-release stabilization (2026-03-02): fixed `Open Studio` task selection race and stale DAG data replay under rapid task switching/deep-link navigation
 - Knowledge workspace using `/api/v1/knowledge`:
   - category model: `ops_manual | mechanism_spec | decision_record`
   - status model: `active | archived`
