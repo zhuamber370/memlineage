@@ -17,6 +17,17 @@ Quick links:
 - Production controls: [Safe-to-Write Checklist](docs/guides/safe-to-write-checklist.md)
 - Operator feedback thread: [GitHub Discussion #20](https://github.com/zhuamber370/memlineage/discussions/20)
 
+## Latest Updates (2026-03-02)
+
+- Home Dashboard (`/`) now provides a global snapshot and `Task / Changes / Knowledge` boards.
+- Dashboard cards and focus actions support query-driven deep links into `/tasks`, `/changes`, and `/knowledge`.
+- Post-release stabilization fixed `Open Studio` task selection race and stale DAG/log replay under rapid task switching.
+- Dashboard polish improved chart readability and focus-board scanning for daily operation.
+
+Supporting docs:
+- [MVP Release Notes](docs/reports/mvp-release-notes.md)
+- [Home Dashboard Changelog (2026-03-01)](docs/reports/2026-03-01-home-dashboard-changelog.md)
+
 ## 5-Minute Evaluation Path
 
 If you need to assess write safety quickly:
