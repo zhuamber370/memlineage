@@ -82,6 +82,65 @@ a {
   box-shadow: 4px 4px 0 #1b1b1b25;
 }
 
+.homeDashboard {
+  display: grid;
+  gap: 12px;
+}
+
+.homeHero {
+  background:
+    radial-gradient(840px 210px at 6% -20%, #deefff 0%, transparent 65%),
+    radial-gradient(920px 210px at 98% -18%, #ffe9d8 0%, transparent 66%),
+    var(--panel);
+}
+
+.homeDashboardGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(280px, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.homePanel {
+  display: grid;
+  gap: 10px;
+}
+
+.homeMetricGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.homeMetricCard {
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  padding: 8px 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.homeMetricCard:hover,
+.homeMetricCard:focus-visible {
+  border-color: var(--focus);
+  outline: none;
+}
+
+.homeList {
+  display: grid;
+  gap: 8px;
+}
+
+.homeListItem {
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  background: #fffdf8;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+
 .h1 {
   margin: 0 0 10px;
   font-size: clamp(1.4rem, 2.2vw, 2rem);
@@ -2172,6 +2231,10 @@ a {
   .rail {
     border-right: none;
     border-bottom: 2px solid var(--line);
+  }
+
+  .homeDashboardGrid {
+    grid-template-columns: 1fr;
   }
 
   .taskLayout {
