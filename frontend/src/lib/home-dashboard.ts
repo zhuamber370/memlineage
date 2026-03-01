@@ -51,6 +51,10 @@ function toTime(value?: string | null): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function toText(value: unknown): string {
+  return typeof value === "string" ? value : "";
+}
+
 function isDueToday(due?: string | null): boolean {
   if (!due) return false;
   const d = new Date(due);
@@ -95,9 +99,27 @@ export function buildHomeSnapshot(input: {
   knowledge: KnowledgeSummary[];
   changes: ChangeSummary[];
 }): HomeSnapshot {
-  const tasks = Array.isArray(input.tasks) ? input.tasks : [];
-  const knowledge = Array.isArray(input.knowledge) ? input.knowledge : [];
-  const changes = Array.isArray(input.changes) ? input.changes : [];
+  const tasks: TaskSummary[] = (Array.isArray(input.tasks) ? input.tasks : []).map((task) => ({
+    id: toText(task?.id),
+    title: toText(task?.title),
+    status: toText(task?.status),
+    priority: toText(task?.priority) || null,
+    due: toText(task?.due) || null,
+    updated_at: toText(task?.updated_at) || null,
+    blocked_by_task_id: toText(task?.blocked_by_task_id) || null
+  }));
+  const knowledge: KnowledgeSummary[] = (Array.isArray(input.knowledge) ? input.knowledge : []).map((item) => ({
+    id: toText(item?.id),
+    title: toText(item?.title),
+    category: toText(item?.category) || null,
+    updated_at: toText(item?.updated_at) || null
+  }));
+  const changes: ChangeSummary[] = (Array.isArray(input.changes) ? input.changes : []).map((item) => ({
+    change_set_id: toText(item?.change_set_id),
+    status: toText(item?.status),
+    created_at: toText(item?.created_at),
+    committed_at: toText(item?.committed_at) || null
+  }));
 
   const taskInProgress = tasks.filter((task) => task.status === "in_progress");
   const p0InProgress = taskInProgress.filter((task) => task.priority === "P0");

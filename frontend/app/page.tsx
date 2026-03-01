@@ -22,8 +22,12 @@ export default function HomeDashboardPage() {
   const [tasks, setTasks] = useState<TaskSummary[]>([]);
   const [knowledge, setKnowledge] = useState<KnowledgeSummary[]>([]);
   const [changes, setChanges] = useState<ChangeSummary[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [tasksLoading, setTasksLoading] = useState(false);
+  const [knowledgeLoading, setKnowledgeLoading] = useState(false);
+  const [changesLoading, setChangesLoading] = useState(false);
+  const [tasksError, setTasksError] = useState("");
+  const [knowledgeError, setKnowledgeError] = useState("");
+  const [changesError, setChangesError] = useState("");
 
   const snapshot = useMemo(() => buildHomeSnapshot({ tasks, knowledge, changes }), [tasks, knowledge, changes]);
   const categoryEntries = useMemo(
@@ -36,23 +40,48 @@ export default function HomeDashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  function messageFromError(error: unknown): string {
+    if (error instanceof Error) return error.message;
+    return String(error ?? "");
+  }
+
   async function loadHomeData() {
-    setLoading(true);
-    setError("");
-    try {
-      const [taskRes, knowledgeRes, changeRes] = await Promise.all([
-        apiGet<TaskListResp>("/api/v1/tasks?page=1&page_size=100"),
-        apiGet<KnowledgeListResp>("/api/v1/knowledge?page=1&page_size=100&status=active"),
-        apiGet<ChangeListResp>("/api/v1/changes?page=1&page_size=100")
-      ]);
-      setTasks(taskRes.items ?? []);
-      setKnowledge(knowledgeRes.items ?? []);
-      setChanges(changeRes.items ?? []);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
+    setTasksLoading(true);
+    setKnowledgeLoading(true);
+    setChangesLoading(true);
+    setTasksError("");
+    setKnowledgeError("");
+    setChangesError("");
+
+    const [taskRes, knowledgeRes, changeRes] = await Promise.allSettled([
+      apiGet<TaskListResp>("/api/v1/tasks?page=1&page_size=100"),
+      apiGet<KnowledgeListResp>("/api/v1/knowledge?page=1&page_size=100&status=active"),
+      apiGet<ChangeListResp>("/api/v1/changes?page=1&page_size=100")
+    ]);
+
+    if (taskRes.status === "fulfilled") {
+      setTasks(taskRes.value.items ?? []);
+    } else {
+      setTasks([]);
+      setTasksError(messageFromError(taskRes.reason));
     }
+    setTasksLoading(false);
+
+    if (knowledgeRes.status === "fulfilled") {
+      setKnowledge(knowledgeRes.value.items ?? []);
+    } else {
+      setKnowledge([]);
+      setKnowledgeError(messageFromError(knowledgeRes.reason));
+    }
+    setKnowledgeLoading(false);
+
+    if (changeRes.status === "fulfilled") {
+      setChanges(changeRes.value.items ?? []);
+    } else {
+      setChanges([]);
+      setChangesError(messageFromError(changeRes.reason));
+    }
+    setChangesLoading(false);
   }
 
   function taskStatusLabel(status: string): string {
@@ -93,21 +122,18 @@ export default function HomeDashboardPage() {
     return `/tasks?${params.toString()}`;
   }
 
+  const isAnyLoading = tasksLoading || knowledgeLoading || changesLoading;
+
   return (
     <section className="homeDashboard">
       <header className="card homeHero">
         <h1 className="h1">{t("home.title")}</h1>
         <p className="meta">{t("home.subtitle")}</p>
         <div className="badges">
-          <button className="badge" onClick={() => void loadHomeData()} disabled={loading}>
-            {loading ? t("home.loading") : t("tasks.refresh")}
+          <button className="badge" onClick={() => void loadHomeData()} disabled={isAnyLoading}>
+            {isAnyLoading ? t("home.loading") : t("tasks.refresh")}
           </button>
         </div>
-        {error ? (
-          <p className="meta" style={{ color: "var(--danger)" }}>
-            {t("home.error")}: {error}
-          </p>
-        ) : null}
       </header>
 
       <div className="homeDashboardGrid">
@@ -151,7 +177,13 @@ export default function HomeDashboardPage() {
           </div>
           <h3 className="changesGroupTitle">{t("home.tasks.focusTitle")}</h3>
           <div className="homeList">
-            {snapshot.task.focus.length ? (
+            {tasksLoading ? (
+              <p className="meta">{t("home.loading")}</p>
+            ) : tasksError ? (
+              <p className="meta" style={{ color: "var(--danger)" }}>
+                {t("home.error")}: {tasksError}
+              </p>
+            ) : snapshot.task.focus.length ? (
               snapshot.task.focus.map((task) => (
                 <article key={task.id} className="homeListItem">
                   <div className="taskTitle">{task.title}</div>
@@ -190,7 +222,13 @@ export default function HomeDashboardPage() {
           </div>
           <h3 className="changesGroupTitle">{t("home.changes.recentTitle")}</h3>
           <div className="homeList">
-            {snapshot.changes.recentProposed.length ? (
+            {changesLoading ? (
+              <p className="meta">{t("home.loading")}</p>
+            ) : changesError ? (
+              <p className="meta" style={{ color: "var(--danger)" }}>
+                {t("home.error")}: {changesError}
+              </p>
+            ) : snapshot.changes.recentProposed.length ? (
               snapshot.changes.recentProposed.map((item) => (
                 <article key={item.change_set_id} className="homeListItem">
                   <div className="taskTitle">{item.change_set_id}</div>
@@ -225,7 +263,13 @@ export default function HomeDashboardPage() {
           </div>
           <h3 className="changesGroupTitle">{t("home.knowledge.byCategoryTitle")}</h3>
           <div className="badges">
-            {categoryEntries.length ? (
+            {knowledgeLoading ? (
+              <span className="meta">{t("home.loading")}</span>
+            ) : knowledgeError ? (
+              <span className="meta" style={{ color: "var(--danger)" }}>
+                {t("home.error")}: {knowledgeError}
+              </span>
+            ) : categoryEntries.length ? (
               categoryEntries.map(([category, count]) => (
                 <span key={category} className="badge">
                   {knowledgeCategoryLabel(category)}: {count}
@@ -237,7 +281,13 @@ export default function HomeDashboardPage() {
           </div>
           <h3 className="changesGroupTitle">{t("home.knowledge.recentTitle")}</h3>
           <div className="homeList">
-            {snapshot.knowledge.recent.length ? (
+            {knowledgeLoading ? (
+              <p className="meta">{t("home.loading")}</p>
+            ) : knowledgeError ? (
+              <p className="meta" style={{ color: "var(--danger)" }}>
+                {t("home.error")}: {knowledgeError}
+              </p>
+            ) : snapshot.knowledge.recent.length ? (
               snapshot.knowledge.recent.map((item) => (
                 <article key={item.id} className="homeListItem">
                   <div className="taskTitle">{item.title}</div>
