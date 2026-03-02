@@ -13,22 +13,30 @@ Quick links:
 - Try locally in 60 seconds: [Dry-Run Demo](#60-second-dry-run-demo)
 - Run full stack: [Quickstart (Local)](#quickstart-local)
 - Integrate with OpenClaw: [INTEGRATION.md](INTEGRATION.md)
+- Integrate with Codex: [Codex Integration](#codex-integration)
 - Runtime/API contract: [docs/guides/agent-api-surface.md](docs/guides/agent-api-surface.md)
 - Production controls: [Safe-to-Write Checklist](docs/guides/safe-to-write-checklist.md)
 - Operator feedback thread: [GitHub Discussion #20](https://github.com/zhuamber370/memlineage/discussions/20)
 
-## Latest Updates (2026-03-02)
+## Start Here
 
+- **OpenClaw user**: jump to [OpenClaw Integration](#openclaw-integration).
+- **Codex user**: jump to [Codex Integration](#codex-integration).
+- **Fast product check**: run [Quickstart (Local)](#quickstart-local), then follow [60-Second Dry-Run Demo](#60-second-dry-run-demo).
+
+## Latest Release (v0.1.2)
+
+- Release page: [MemLineage v0.1.2](https://github.com/zhuamber370/memlineage/releases/tag/v0.1.2)
 - Home Dashboard (`/`) now provides a global snapshot and `Task / Changes / Knowledge` boards.
 - Dashboard cards and focus actions support query-driven deep links into `/tasks`, `/changes`, and `/knowledge`.
 - Post-release stabilization fixed `Open Studio` task selection race and stale DAG/log replay under rapid task switching.
 - Dashboard polish improved chart readability and focus-board scanning for daily operation.
 
-Supporting docs:
+Supporting release docs:
 - [MVP Release Notes](docs/reports/mvp-release-notes.md)
 - [Home Dashboard Changelog (2026-03-01)](docs/reports/2026-03-01-home-dashboard-changelog.md)
 
-## 5-Minute Evaluation Path
+## Evaluation Flow (after stack is running)
 
 If you need to assess write safety quickly:
 
@@ -219,11 +227,10 @@ Integration references:
 - Runtime/API contract: [docs/guides/agent-api-surface.md](docs/guides/agent-api-surface.md)
 - Proof pack: [docs/proof/README.md](docs/proof/README.md)
 
-## Operator Feedback Thread
+## Community
 
-We are collecting production feedback for governed agent writes:
-- Discussion: [What is your minimum safe-to-write checklist for production AI agents?](https://github.com/zhuamber370/memlineage/discussions/20)
-- Focus questions:
+- Operator feedback thread: [What is your minimum safe-to-write checklist for production AI agents?](https://github.com/zhuamber370/memlineage/discussions/20)
+- Current focus questions:
   1. Which approval/audit fields are non-negotiable before commit?
   2. Where should approval happen in practice (app layer, queue boundary, CI gate, or elsewhere)?
   3. Which failure mode is most important to defend first?
