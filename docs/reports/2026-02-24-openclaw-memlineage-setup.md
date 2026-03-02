@@ -28,15 +28,15 @@ export KMS_API_KEY="<your_api_key>"
 
 ```bash
 cd <repo_root>
-bash scripts/install_openclaw_kms_skill.sh
+bash scripts/install_openclaw_memlineage_skill.sh
 ```
 
-The installer auto-detects OpenClaw workspace from `~/.openclaw/openclaw.json` (`agents.defaults.workspace`) and installs to `<workspace>/skills/kms`.
+The installer auto-detects OpenClaw workspace from `~/.openclaw/openclaw.json` (`agents.defaults.workspace`) and installs to `<workspace>/skills/memlineage`.
 
 Verify:
 
 ```bash
-openclaw skills info kms --json
+openclaw skills info memlineage --json
 openclaw skills check --json
 ```
 
@@ -100,7 +100,7 @@ Undo last commit reason=<reason>
 
 ```bash
 cd <repo_root>
-bash scripts/uninstall_openclaw_kms_skill.sh
+bash scripts/uninstall_openclaw_memlineage_skill.sh
 ```
 
 ## Troubleshooting

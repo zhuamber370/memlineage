@@ -7,7 +7,7 @@ import uuid
 from sqlalchemy import and_, case, false, func, select
 from sqlalchemy.orm import Session
 
-from src.models import Cycle, Task, TaskSource, Topic
+from src.models import Task, TaskSource, Topic
 from src.schemas import TopicCreate, TaskCreate, TaskPatch
 from src.services.audit_service import log_audit_event
 
@@ -40,7 +40,6 @@ class TaskService:
             priority=payload.priority,
             due=payload.due,
             source=payload.source,
-            cycle_id=payload.cycle_id,
         )
         self.db.add(task)
         self.db.commit()
@@ -67,7 +66,6 @@ class TaskService:
         priority: Optional[str] = None,
         archived: Optional[bool] = None,
         topic_id: Optional[str] = None,
-        cycle_id: Optional[str] = None,
         stale_days: Optional[int] = None,
         due_before: Optional[date] = None,
         updated_before: Optional[datetime] = None,
@@ -90,9 +88,6 @@ class TaskService:
         if topic_id:
             stmt = stmt.where(Task.topic_id == topic_id)
             count_stmt = count_stmt.where(Task.topic_id == topic_id)
-        if cycle_id:
-            stmt = stmt.where(Task.cycle_id == cycle_id)
-            count_stmt = count_stmt.where(Task.cycle_id == cycle_id)
         if stale_days:
             stale_before = now - timedelta(days=stale_days)
             stmt = stmt.where(Task.updated_at <= stale_before)
@@ -334,28 +329,6 @@ class TaskService:
         if view == "done":
             return Task.status == "done"
         return None
-
-
-class CycleService:
-    def __init__(self, db: Session):
-        self.db = db
-
-    def create(self, name: str, start_date: date, end_date: date, status: str) -> Cycle:
-        cycle = Cycle(
-            id=f"cyc_{uuid.uuid4().hex[:12]}",
-            name=name,
-            start_date=start_date,
-            end_date=end_date,
-            status=status,
-        )
-        self.db.add(cycle)
-        self.db.commit()
-        self.db.refresh(cycle)
-        return cycle
-
-    def list(self) -> list[Cycle]:
-        stmt = select(Cycle).order_by(Cycle.start_date.desc())
-        return list(self.db.scalars(stmt))
 
 
 class TopicService:

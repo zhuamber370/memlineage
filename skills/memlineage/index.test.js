@@ -4,13 +4,12 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 
 const skill = require("./index");
-const { createKmsClient } = require("./lib/client");
+const { createMemlineageClient } = require("./lib/client");
 
-test("kms skill exposes comprehensive read actions", () => {
+test("memlineage skill exposes comprehensive read actions", () => {
   const actionNames = Object.keys(skill.actions);
   const expected = [
     "list_topics",
-    "list_cycles",
     "list_ideas",
     "list_changes",
     "get_change",
@@ -41,7 +40,7 @@ test("kms skill exposes comprehensive read actions", () => {
 
 test("list_tasks supports full backend query filters", () => {
   const properties = skill.actions.list_tasks.parameters.properties;
-  const expectedFilters = ["archived", "cycle_id", "stale_days", "due_before", "updated_before", "view"];
+  const expectedFilters = ["archived", "stale_days", "due_before", "updated_before", "view"];
   for (const key of expectedFilters) {
     assert.ok(Object.prototype.hasOwnProperty.call(properties, key), `missing list_tasks filter: ${key}`);
   }
@@ -72,7 +71,7 @@ test("api_get enforces relative /api/v1 path and forwards params", async () => {
   });
 
   try {
-    const client = createKmsClient({});
+    const client = createMemlineageClient({});
     await assert.rejects(
       async () => client.apiGet("http://example.com/api/v1/tasks", {}),
       /path must start with '\/'/
@@ -143,7 +142,7 @@ test("getTaskExecutionSnapshot resolves task from natural-language query", async
   };
 
   try {
-    const client = createKmsClient({});
+    const client = createMemlineageClient({});
     const out = await client.getTaskExecutionSnapshot({ task_query: "agent-first saas" });
     assert.equal(out.needs_disambiguation, false);
     assert.equal(out.task_id, "tsk_1");
@@ -183,7 +182,7 @@ test("getTaskExecutionSnapshot returns disambiguation candidates when task query
   };
 
   try {
-    const client = createKmsClient({});
+    const client = createMemlineageClient({});
     const out = await client.getTaskExecutionSnapshot({ task_query: "route upgrade" });
     assert.equal(out.needs_disambiguation, true);
     assert.equal(out.task_id, null);

@@ -1,6 +1,6 @@
-# MemLineage Integration (OpenClaw-first)
+# MemLineage Integration (OpenClaw + Codex)
 
-MemLineage is designed to be the **governed memory & change-governance layer** for OpenClaw workflows.
+MemLineage is designed to be the **governed memory & change-governance layer** for OpenClaw and Codex workflows.
 
 It helps you prevent "agent writes" from silently polluting memory/knowledge by enforcing a PR-like loop:
 
@@ -25,10 +25,20 @@ Reads are safe by default.
 2) Install OpenClaw skill:
 
 ```bash
-bash scripts/install_openclaw_kms_skill.sh
+bash scripts/install_openclaw_memlineage_skill.sh
 ```
 
-3) Configure env (where OpenClaw runs)
+3) Install Codex skill:
+
+```bash
+mkdir -p ~/.codex/skills
+if [ -d ~/.codex/skills/memlineage ]; then \
+  mv ~/.codex/skills/memlineage ~/.codex/skills/memlineage.backup.$(date +%Y%m%d_%H%M%S); \
+fi
+cp -R skills/memlineage ~/.codex/skills/memlineage
+```
+
+4) Configure env (where OpenClaw/Codex runs)
 
 - `KMS_BASE_URL=http://127.0.0.1:8000`
 - `KMS_API_KEY=...`
@@ -51,7 +61,7 @@ bash scripts/install_openclaw_kms_skill.sh
 
 ---
 
-## Integration checklist (for OpenClaw skill / UI authors)
+## Integration checklist (for OpenClaw/Codex skill authors)
 
 - [ ] Every write path is routed through MemLineage changes pipeline
 - [ ] You can display: `change_set_id`, `summary`, `diff_items`
@@ -71,4 +81,4 @@ Please include:
 - Your target workflow (what is writing what)
 - Where you want human approval to happen
 - What you want the diff to look like
-- Your environment (OS / MemLineage version / OpenClaw version)
+- Your environment (OS / MemLineage version / OpenClaw/Codex version)

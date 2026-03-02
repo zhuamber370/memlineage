@@ -1,7 +1,7 @@
 ---
-name: kms
+name: memlineage
 version: 1.0.0
-description: MemLineage integration for governed read/write access (tasks, journals, notes, knowledge, routes).
+description: Use proactively and MUST BE USED for tasks/journals/notes/knowledge/routes/changes/audit requests; prioritize MemLineage read actions, keep write operations explicit-confirmation only.
 metadata:
   openclaw:
     emoji: "🗂️"
@@ -14,6 +14,28 @@ metadata:
 # MemLineage Skill
 
 Use this skill when you need to read or write MemLineage data.
+
+## Activation Priority (MUST)
+
+1. Proactive activation
+- This skill MUST BE USED for requests related to:
+  - tasks
+  - journals
+  - notes
+  - knowledge
+  - routes / DAG execution
+  - changes / commits / undo
+  - audit events
+- Do not wait for users to mention API names or action names.
+
+2. Highest-priority routing
+- When a request falls into the domains above, route to `memlineage` read actions first.
+- Only use other generic tools when MemLineage has no matching read capability.
+
+3. Integration contract
+- Runtime pattern remains: REST + tool calling (JSON Schema).
+- Tools return standard structured JSON for stability and testing.
+- Conversation output should be natural language by default (see Response Policy).
 
 ## Governance Rules
 
@@ -66,15 +88,47 @@ Use this skill when you need to read or write MemLineage data.
 - For information requests, perform read actions only.
 - Never trigger `propose_*` / commit / reject / undo unless user explicitly asks to write.
 
+## Natural-Language Routing Examples
+
+Use these mappings as default behavior:
+
+1. "今天有哪些待办最需要我先做？"
+- Use `list_tasks` + optional `list_task_views_summary`, then answer in natural language.
+
+2. "这个任务现在执行到哪个节点了？"
+- Use `get_task_execution_snapshot` first, then `get_route_graph` if needed.
+
+3. "把昨天的会议纪要记到日志里。"
+- This is explicit write intent: use `propose_append_journal`, then wait for confirmation before `commit_changes`.
+
+4. "按主题看一下最近的知识沉淀。"
+- Use `list_note_topic_summary` + `list_knowledge` and summarize by topic.
+
+5. "帮我找跟 onboarding 相关的笔记。"
+- Use `search_notes` with query/topic filters; return top matches + ask whether to continue paging.
+
+6. "我想看这条变更的详情和影响。"
+- Use `get_change`; explain impact in user language.
+
+7. "把上一个提交回滚。"
+- Explicit write intent: use `undo_last_commit`.
+
+8. "最近谁改了任务状态？"
+- Use `list_audit_events` with filters, then summarize actor/action timeline.
+
 ## Response Style (MUST)
 
 1. Natural-language first
 - Explain findings in business/task language, not database language.
 - Lead with the direct answer, then give key evidence.
+- Default answer structure:
+  1) 结论
+  2) 关键点
+  3) 下一步建议
 
 2. Hide technical internals by default
 - Do not mention API paths, action names, table/field names, or SQL-like wording unless user explicitly asks.
-- Do not dump raw JSON unless user explicitly asks for raw output.
+- Do not dump raw JSON unless user explicitly asks for raw output / debug output.
 
 3. Translate system terms into user language
 - Convert status/enums to natural phrasing (e.g. `execute` -> "执行中", `waiting` -> "等待中", `done` -> "已完成").
@@ -91,12 +145,38 @@ Use this skill when you need to read or write MemLineage data.
 - If task/route target is ambiguous, ask one concise disambiguation question with top candidates.
 - Once clarified, continue with a natural-language summary.
 
+## Error Message Mapping (MUST)
+
+When backend returns machine error codes, convert to user-friendly wording:
+
+- `TOPIC_NOT_FOUND` -> "没找到该主题，请先选择已有主题。"
+- `TASK_NOT_FOUND` -> "没找到对应任务，请确认任务名称或 ID。"
+- `CHANGE_SET_NOT_FOUND` -> "没找到这条变更记录，可能已被提交或删除。"
+- `TASK_CANCEL_REASON_REQUIRED` -> "该任务标记为取消时，必须填写取消原因。"
+- `TASK_INVALID_STATUS_TRANSITION` -> "当前状态不允许直接这样变更，请先按流程切换状态。"
+- `NO_COMMIT_TO_UNDO` -> "当前没有可回滚的提交。"
+
+If code is unknown:
+- Explain what failed in plain language.
+- Provide one concrete next step.
+
+## Large Result Handling (MUST)
+
+1. Summary first
+- For large lists, provide a compact summary first (count + top highlights).
+
+2. Page by default
+- Use page/page_size based read actions.
+- Return first page highlights, then ask whether user wants the next page.
+
+3. No raw dump
+- Do not output full raw JSON for large payloads unless explicitly requested for debugging.
+
 ## Read Actions
 
 - `get_context_bundle`
 - `list_tasks`
 - `list_topics`
-- `list_cycles`
 - `list_ideas`
 - `list_changes`
 - `get_change`

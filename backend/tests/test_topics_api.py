@@ -24,7 +24,7 @@ def test_list_topics_returns_fixed_active_catalog():
     assert all(item["name_zh"] for item in items)
 
 
-def test_create_topic_is_blocked_when_taxonomy_locked():
+def test_create_topic_endpoint_not_exposed():
     client = make_client()
     created = client.post(
         "/api/v1/topics",
@@ -37,5 +37,4 @@ def test_create_topic_is_blocked_when_taxonomy_locked():
             "summary": "custom",
         },
     )
-    assert created.status_code == 403
-    assert created.json()["error"]["code"] == "TOPIC_TAXONOMY_LOCKED"
+    assert created.status_code == 405

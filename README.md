@@ -189,14 +189,28 @@ For PostgreSQL setup and deeper runtime options, see:
 Install workspace skill:
 
 ```bash
-bash scripts/install_openclaw_kms_skill.sh
-openclaw skills info kms --json
+bash scripts/install_openclaw_memlineage_skill.sh
+openclaw skills info memlineage --json
 openclaw skills check --json
 ```
 
+## Codex Integration
+
+Install skill into Codex local skills directory:
+
+```bash
+mkdir -p ~/.codex/skills
+if [ -d ~/.codex/skills/memlineage ]; then \
+  mv ~/.codex/skills/memlineage ~/.codex/skills/memlineage.backup.$(date +%Y%m%d_%H%M%S); \
+fi
+cp -R skills/memlineage ~/.codex/skills/memlineage
+```
+
+After install, start a new Codex session to load the updated skill list.
+
 Integration references:
-- OpenClaw-first integration guide: [INTEGRATION.md](INTEGRATION.md)
-- Skill contract: [openclaw-skill/kms/SKILL.md](openclaw-skill/kms/SKILL.md)
+- Agent integration guide: [INTEGRATION.md](INTEGRATION.md)
+- Skill contract: [skills/memlineage/SKILL.md](skills/memlineage/SKILL.md)
 
 ## Docs and Proof
 

@@ -7,12 +7,11 @@ This document defines the current agent-facing API contract.
 
 ## 1) Read APIs (direct read)
 
-### Tasks / Topics / Cycles
+### Tasks / Topics
 - `GET /api/v1/tasks`
 - `GET /api/v1/tasks/views/summary`
 - `GET /api/v1/tasks/{task_id}/sources`
 - `GET /api/v1/topics`
-- `GET /api/v1/cycles`
 
 ### Notes / Knowledge / Links / Inbox
 - `GET /api/v1/notes/search`
@@ -152,9 +151,9 @@ All agent writes should use governed write flow:
 ## 6) OpenClaw skill mapping
 
 Production skill path:
-- `openclaw-skill/kms/SKILL.md`
-- `openclaw-skill/kms/index.js`
-- `openclaw-skill/kms/lib/client.js`
+- `skills/memlineage/SKILL.md`
+- `skills/memlineage/index.js`
+- `skills/memlineage/lib/client.js`
 
 Action mapping:
 - `list_*` and `get_*` skill actions call read APIs directly.

@@ -10,24 +10,24 @@ if [[ -z "${WORKSPACE_DIR}" ]]; then
   WORKSPACE_DIR="${HOME}/.openclaw/workspace"
 fi
 
-TARGET_DIR="${WORKSPACE_DIR}/skills/kms"
+TARGET_DIR="${WORKSPACE_DIR}/skills/memlineage"
 
 if [[ -d "${TARGET_DIR}" ]]; then
   rm -rf "${TARGET_DIR}"
   echo "Removed: ${TARGET_DIR}"
 else
-  echo "No installed kms skill found at: ${TARGET_DIR}"
+  echo "No installed memlineage skill found at: ${TARGET_DIR}"
 fi
 
 if [[ -d "${HOME}/.openclaw/skills" ]]; then
-  find "${HOME}/.openclaw/skills" -maxdepth 1 -type d -name "kms.backup.*" -prune -exec rm -rf {} +
+  find "${HOME}/.openclaw/skills" -maxdepth 1 -type d -name "memlineage.backup.*" -prune -exec rm -rf {} +
 fi
 
-INFO_JSON="$(openclaw skills info kms --json)"
+INFO_JSON="$(openclaw skills info memlineage --json)"
 if echo "${INFO_JSON}" | rg -q '"error"\s*:\s*"not found"'; then
-  echo "Verification: kms skill is no longer discoverable."
+  echo "Verification: memlineage skill is no longer discoverable."
 else
-  echo "WARNING: kms skill is still discoverable (possibly from another skill directory)."
+  echo "WARNING: memlineage skill is still discoverable (possibly from another skill directory)."
 fi
 
 echo "Done."

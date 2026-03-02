@@ -3,14 +3,18 @@
 This directory contains legacy Python helper scripts used during early integration.
 
 Current production path for OpenClaw is the native workspace skill bundle:
-- `<repo_root>/openclaw-skill/kms`
+- `<repo_root>/skills/memlineage`
 
-Install/uninstall commands:
-- `bash <repo_root>/scripts/install_openclaw_kms_skill.sh`
-- `bash <repo_root>/scripts/uninstall_openclaw_kms_skill.sh`
+OpenClaw install/uninstall commands:
+- `bash <repo_root>/scripts/install_openclaw_memlineage_skill.sh`
+- `bash <repo_root>/scripts/uninstall_openclaw_memlineage_skill.sh`
 
-Install target:
-- OpenClaw workspace `skills` directory (`<workspace>/skills/kms`)
+OpenClaw install target:
+- OpenClaw workspace `skills` directory (`<workspace>/skills/memlineage`)
+
+Codex install target:
+- `~/.codex/skills/memlineage`
+- copy from `<repo_root>/skills/memlineage` into that directory.
 
 Legacy files kept for reference:
 - `openclaw_skill.py`

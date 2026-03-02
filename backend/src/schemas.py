@@ -8,7 +8,6 @@ from pydantic import BaseModel, ConfigDict, Field
 TaskStatus = Literal["todo", "in_progress", "done", "cancelled"]
 TaskPriority = Literal["P0", "P1", "P2", "P3"]
 TaskView = Literal["today", "overdue", "this_week", "backlog", "blocked", "done"]
-CycleStatus = Literal["planned", "active", "closed"]
 TopicKind = Literal["domain", "project", "playbook", "decision", "issue"]
 TopicStatus = Literal["active", "watch", "archived"]
 NoteStatus = Literal["active", "archived"]
@@ -28,7 +27,6 @@ class TaskCreate(BaseModel):
     priority: Optional[TaskPriority] = None
     due: Optional[date] = None
     source: str = Field(min_length=1)
-    cycle_id: Optional[str] = None
 
 
 class TaskPatch(BaseModel):
@@ -43,7 +41,6 @@ class TaskPatch(BaseModel):
     priority: Optional[TaskPriority] = None
     due: Optional[date] = None
     source: Optional[str] = Field(default=None, min_length=1)
-    cycle_id: Optional[str] = None
     archived_at: Optional[datetime] = None
 
 
@@ -60,7 +57,6 @@ class TaskOut(BaseModel):
     priority: Optional[TaskPriority]
     due: Optional[date]
     source: str
-    cycle_id: Optional[str]
     archived_at: Optional[datetime]
     created_at: datetime
     updated_at: datetime
@@ -101,29 +97,6 @@ class TaskViewsSummaryOut(BaseModel):
     backlog: int
     blocked: int
     done: int
-
-
-class CycleCreate(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    name: str = Field(min_length=1, max_length=120)
-    start_date: date
-    end_date: date
-    status: CycleStatus
-
-
-class CycleOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-    id: str
-    name: str
-    start_date: date
-    end_date: date
-    status: CycleStatus
-    created_at: datetime
-    updated_at: datetime
-
-
-class CycleListOut(BaseModel):
-    items: list[CycleOut]
 
 
 class TopicCreate(BaseModel):

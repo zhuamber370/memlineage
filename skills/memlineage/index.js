@@ -1,11 +1,12 @@
 "use strict";
 
-const { createKmsClient } = require("./lib/client");
+const { createMemlineageClient } = require("./lib/client");
 
 const skill = {
-  name: "kms",
+  name: "memlineage",
   version: "1.0.0",
-  description: "MemLineage read/write governance skill for tasks, journals and knowledge",
+  description:
+    "Use proactively for tasks/journals/notes/knowledge/routes/changes/audit with read-first routing and explicit-confirmation writes",
   actions: {
     get_context_bundle: {
       description: "Read compact context bundle for planning/analysis",
@@ -26,7 +27,7 @@ const skill = {
         required: ["intent"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         const params = {
           intent: args.intent,
           window_days: args.window_days ?? 14,
@@ -50,7 +51,6 @@ const skill = {
           priority: { type: "string" },
           archived: { type: "boolean" },
           topic_id: { type: "string" },
-          cycle_id: { type: "string" },
           stale_days: { type: "number" },
           due_before: { type: "string" },
           updated_before: { type: "string" },
@@ -59,7 +59,7 @@ const skill = {
         },
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.listTasks(args || {});
       },
     },
@@ -70,19 +70,8 @@ const skill = {
         properties: {},
       },
       handler: async (_args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.listTopics();
-      },
-    },
-    list_cycles: {
-      description: "List all cycles",
-      parameters: {
-        type: "object",
-        properties: {},
-      },
-      handler: async (_args, context) => {
-        const client = createKmsClient(context);
-        return client.listCycles();
       },
     },
     list_ideas: {
@@ -98,7 +87,7 @@ const skill = {
         },
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.listIdeas(args || {});
       },
     },
@@ -113,7 +102,7 @@ const skill = {
         },
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.listChanges(args || {});
       },
     },
@@ -127,7 +116,7 @@ const skill = {
         required: ["change_set_id"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.getChange(args.change_set_id);
       },
     },
@@ -149,7 +138,7 @@ const skill = {
         },
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.listAuditEvents(args || {});
       },
     },
@@ -160,7 +149,7 @@ const skill = {
         properties: {},
       },
       handler: async (_args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.listTaskViewsSummary();
       },
     },
@@ -173,7 +162,7 @@ const skill = {
         },
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.listNoteTopicSummary(args || {});
       },
     },
@@ -190,7 +179,7 @@ const skill = {
         },
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.listRoutes(args || {});
       },
     },
@@ -208,7 +197,7 @@ const skill = {
         required: ["task_id"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.listRoutes({
           task_id: args.task_id,
           page: args.page ?? 1,
@@ -229,7 +218,7 @@ const skill = {
         required: ["route_id", "node_id"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.getNodeLogs(args.route_id, args.node_id);
       },
     },
@@ -243,7 +232,7 @@ const skill = {
         required: ["route_id"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.getRouteGraph(args.route_id);
       },
     },
@@ -263,7 +252,7 @@ const skill = {
         },
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.getTaskExecutionSnapshot({
           task_id: args.task_id,
           task_query: args.task_query,
@@ -289,7 +278,7 @@ const skill = {
         },
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.searchNotes(args || {});
       },
     },
@@ -305,7 +294,7 @@ const skill = {
         },
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.listJournals(args || {});
       },
     },
@@ -319,7 +308,7 @@ const skill = {
         required: ["journal_date"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.getJournal(args.journal_date);
       },
     },
@@ -333,7 +322,7 @@ const skill = {
         required: ["journal_date"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.listJournalItems(args.journal_date);
       },
     },
@@ -347,7 +336,7 @@ const skill = {
         required: ["task_id"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.listTaskSources(args.task_id);
       },
     },
@@ -361,7 +350,7 @@ const skill = {
         required: ["note_id"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.listNoteSources(args.note_id);
       },
     },
@@ -380,7 +369,7 @@ const skill = {
         },
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.listLinks(args || {});
       },
     },
@@ -395,7 +384,7 @@ const skill = {
         },
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.listInbox(args || {});
       },
     },
@@ -409,7 +398,7 @@ const skill = {
         required: ["inbox_id"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.getInbox(args.inbox_id);
       },
     },
@@ -426,7 +415,7 @@ const skill = {
         },
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.listKnowledge(args || {});
       },
     },
@@ -440,7 +429,7 @@ const skill = {
         required: ["item_id"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.getKnowledge(args.item_id);
       },
     },
@@ -458,7 +447,7 @@ const skill = {
         required: ["path"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.apiGet(args.path, args.params || {});
       },
     },
@@ -477,7 +466,7 @@ const skill = {
         required: ["title", "source"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.proposeRecordTodo(args);
       },
     },
@@ -493,7 +482,7 @@ const skill = {
         required: ["journal_date", "append_text", "source"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.proposeAppendJournal(args);
       },
     },
@@ -514,7 +503,7 @@ const skill = {
         required: ["title", "body_increment", "source"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.proposeUpsertKnowledge(args);
       },
     },
@@ -529,7 +518,7 @@ const skill = {
         required: ["content", "source"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.proposeCaptureInbox(args);
       },
     },
@@ -549,7 +538,7 @@ const skill = {
         required: ["task_id", "title", "source"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.proposeCreateIdea(args);
       },
     },
@@ -569,7 +558,7 @@ const skill = {
         required: ["idea_id"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.proposePatchIdea(args);
       },
     },
@@ -587,7 +576,7 @@ const skill = {
         required: ["idea_id", "route_id"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.proposePromoteIdea(args);
       },
     },
@@ -607,7 +596,7 @@ const skill = {
         required: ["task_id", "name"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.proposeCreateRoute(args);
       },
     },
@@ -627,7 +616,7 @@ const skill = {
         required: ["route_id"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.proposePatchRoute(args);
       },
     },
@@ -649,7 +638,7 @@ const skill = {
         required: ["route_id", "node_type", "title"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.proposeCreateRouteNode(args);
       },
     },
@@ -672,7 +661,7 @@ const skill = {
         required: ["route_id", "node_id"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.proposePatchRouteNode(args);
       },
     },
@@ -687,7 +676,7 @@ const skill = {
         required: ["route_id", "node_id"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.proposeDeleteRouteNode(args);
       },
     },
@@ -705,7 +694,7 @@ const skill = {
         required: ["route_id", "from_node_id", "to_node_id"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.proposeCreateRouteEdge(args);
       },
     },
@@ -721,7 +710,7 @@ const skill = {
         required: ["route_id", "edge_id"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.proposePatchRouteEdge(args);
       },
     },
@@ -736,7 +725,7 @@ const skill = {
         required: ["route_id", "edge_id"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.proposeDeleteRouteEdge(args);
       },
     },
@@ -756,7 +745,7 @@ const skill = {
         required: ["route_id", "node_id", "content"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.proposeAppendRouteNodeLog(args);
       },
     },
@@ -772,7 +761,7 @@ const skill = {
         required: ["title", "body"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.proposeCreateKnowledge(args);
       },
     },
@@ -790,7 +779,7 @@ const skill = {
         required: ["item_id"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.proposePatchKnowledge(args);
       },
     },
@@ -804,7 +793,7 @@ const skill = {
         required: ["item_id"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.proposeArchiveKnowledge(args);
       },
     },
@@ -818,7 +807,7 @@ const skill = {
         required: ["item_id"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.proposeDeleteKnowledge(args);
       },
     },
@@ -836,7 +825,7 @@ const skill = {
         required: ["from_type", "from_id", "to_type", "to_id", "relation"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.proposeCreateLink(args);
       },
     },
@@ -850,7 +839,7 @@ const skill = {
         required: ["link_id"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.proposeDeleteLink(args);
       },
     },
@@ -867,7 +856,7 @@ const skill = {
         required: ["change_set_id"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.commitChanges(
           args.change_set_id,
           { type: args.approved_by_type || "user", id: args.approved_by_id || "usr_local" },
@@ -885,7 +874,7 @@ const skill = {
         required: ["change_set_id"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.rejectChanges(args.change_set_id);
       },
     },
@@ -902,7 +891,7 @@ const skill = {
         required: ["reason"],
       },
       handler: async (args, context) => {
-        const client = createKmsClient(context);
+        const client = createMemlineageClient(context);
         return client.undoLastCommit(
           { type: args.requested_by_type || "user", id: args.requested_by_id || "usr_local" },
           args.reason,

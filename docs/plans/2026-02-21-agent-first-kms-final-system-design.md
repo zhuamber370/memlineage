@@ -1,5 +1,6 @@
 > Documentation Status: Historical Snapshot
 > Last synced: 2026-02-25
+> 2026-03-02 Update: `cycles` / `cycle_id` capabilities were removed from the current product; related mentions in this file are historical only.
 
 # MemLineage Final System Design (v0.7, Synced 2026-02-25)
 

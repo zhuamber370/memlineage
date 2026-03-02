@@ -4,7 +4,7 @@
 # MVP Release Notes (Synced 2026-03-02)
 
 ## Delivered
-- Backend APIs for `topics/tasks/cycles/notes/knowledge/journals/inbox/links/ideas/routes/changes/context/audit`
+- Backend APIs for `topics/tasks/notes/knowledge/journals/inbox/links/ideas/routes/changes/context/audit`
 - Governed write flow: `dry-run -> commit/reject -> undo-last`
 - Audit events with chain metadata (`change_set_id`, `commit_id`, `action_index`)
 - DAG execution graph logging upgrade:
@@ -51,7 +51,7 @@
 - Frontend:
   - `cd frontend && npm run build`
 - Skill:
-  - `cd openclaw-skill/kms && node --test index.test.js`
+  - `cd skills/memlineage && node --test index.test.js`
 
 ## Known gaps
 - No SaaS multi-tenant auth/billing/OAuth yet

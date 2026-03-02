@@ -48,18 +48,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   priority VARCHAR(2),
   due DATE,
   source VARCHAR(300) NOT NULL,
-  cycle_id VARCHAR(40),
   archived_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS cycles (
-  id VARCHAR(40) PRIMARY KEY,
-  name VARCHAR(120) NOT NULL,
-  start_date DATE NOT NULL,
-  end_date DATE NOT NULL,
-  status VARCHAR(20) NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

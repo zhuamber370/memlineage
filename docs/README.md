@@ -7,7 +7,7 @@ This is the documentation entrypoint for MemLineage.
 - Product overview and quickstart: [../README.md](../README.md)
 - Safe-to-Write checklist: [guides/safe-to-write-checklist.md](guides/safe-to-write-checklist.md)
 - Contributor onboarding: [../CONTRIBUTING.md](../CONTRIBUTING.md)
-- Integration guide (OpenClaw-first): [../INTEGRATION.md](../INTEGRATION.md)
+- Integration guide (OpenClaw + Codex): [../INTEGRATION.md](../INTEGRATION.md)
 
 ## Runtime Contracts (Authoritative)
 
@@ -15,7 +15,7 @@ Use these as source of truth for current behavior:
 - Backend runtime: [../backend/README.md](../backend/README.md)
 - Frontend runtime: [../frontend/README.md](../frontend/README.md)
 - Agent API surface: [guides/agent-api-surface.md](guides/agent-api-surface.md)
-- OpenClaw skill contract: [../openclaw-skill/kms/SKILL.md](../openclaw-skill/kms/SKILL.md)
+- OpenClaw skill contract: [../skills/memlineage/SKILL.md](../skills/memlineage/SKILL.md)
 
 ## Validation and Proof
 

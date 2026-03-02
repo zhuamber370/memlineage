@@ -783,7 +783,7 @@ class ChangeService:
     def _build_diff_line(self, action_type: str, payload: dict) -> str:
         if action_type == "create_task":
             parts = []
-            for key in ["title", "status", "priority", "cycle_id", "due"]:
+            for key in ["title", "status", "priority", "due"]:
                 if key in payload and payload.get(key) is not None:
                     parts.append(f"{key}={payload.get(key)}")
             if not parts:
@@ -962,7 +962,6 @@ class ChangeService:
             priority=model.priority,
             due=model.due,
             source=model.source,
-            cycle_id=model.cycle_id,
         )
         self.db.add(task)
         self.db.flush()

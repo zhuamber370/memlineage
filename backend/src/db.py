@@ -125,17 +125,6 @@ def ensure_runtime_schema(engine) -> None:
         )
         """,
         """
-        CREATE TABLE IF NOT EXISTS cycles (
-          id VARCHAR(40) PRIMARY KEY,
-          name VARCHAR(120) NOT NULL,
-          start_date DATE NOT NULL,
-          end_date DATE NOT NULL,
-          status VARCHAR(20) NOT NULL,
-          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        )
-        """,
-        """
         CREATE TABLE IF NOT EXISTS entity_logs (
           id VARCHAR(40) PRIMARY KEY,
           route_id VARCHAR(40) NOT NULL REFERENCES routes(id) ON DELETE CASCADE,
@@ -157,7 +146,6 @@ def ensure_runtime_schema(engine) -> None:
         "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS acceptance_criteria TEXT",
         "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS topic_id VARCHAR(40)",
         "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS cancelled_reason TEXT",
-        "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS cycle_id VARCHAR(40)",
         "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ",
         "ALTER TABLE ideas ADD COLUMN IF NOT EXISTS task_id VARCHAR(40)",
         "ALTER TABLE routes ADD COLUMN IF NOT EXISTS task_id VARCHAR(40)",
@@ -326,6 +314,8 @@ def ensure_runtime_schema(engine) -> None:
         "ALTER TABLE tasks DROP COLUMN IF EXISTS blocked_by_task_id",
         "ALTER TABLE tasks DROP COLUMN IF EXISTS next_review_at",
         "ALTER TABLE tasks DROP COLUMN IF EXISTS project",
+        "ALTER TABLE tasks DROP COLUMN IF EXISTS cycle_id",
+        "DROP TABLE IF EXISTS cycles",
         "ALTER TABLE notes ALTER COLUMN status SET DEFAULT 'active'",
         "ALTER TABLE notes ALTER COLUMN status SET NOT NULL",
         "ALTER TABLE notes ALTER COLUMN category SET DEFAULT 'mechanism_spec'",
@@ -591,6 +581,7 @@ def _ensure_runtime_schema_sqlite(engine) -> None:
             )
         )
         _sqlite_rebuild_tasks_table_if_needed(conn)
+        _sqlite_drop_cycles_table_if_present(conn)
         for stmt in statements:
             conn.execute(text(stmt))
 
@@ -619,7 +610,9 @@ def _sqlite_rebuild_tasks_table_if_needed(conn) -> None:
     info = conn.execute(text("PRAGMA table_info(tasks)")).fetchall()
     current_columns = {str(row[1]) for row in info}
     legacy_columns = {"next_action", "task_type", "blocked_by_task_id", "next_review_at", "project"}
-    if not (current_columns & legacy_columns):
+    has_legacy_columns = bool(current_columns & legacy_columns)
+    has_cycle_column = "cycle_id" in current_columns
+    if not has_legacy_columns and not has_cycle_column:
         return
 
     target_columns = [
@@ -633,7 +626,6 @@ def _sqlite_rebuild_tasks_table_if_needed(conn) -> None:
         "priority",
         "due",
         "source",
-        "cycle_id",
         "archived_at",
         "created_at",
         "updated_at",
@@ -655,7 +647,6 @@ def _sqlite_rebuild_tasks_table_if_needed(conn) -> None:
         "priority": "priority" if "priority" in current_columns else "NULL",
         "due": "due" if "due" in current_columns else "NULL",
         "source": _source_expr("source", "'migration://sqlite/tasks-rebuild'"),
-        "cycle_id": "cycle_id" if "cycle_id" in current_columns else "NULL",
         "archived_at": "archived_at" if "archived_at" in current_columns else "NULL",
         "created_at": _source_expr("created_at", "CURRENT_TIMESTAMP"),
         "updated_at": _source_expr("updated_at", "CURRENT_TIMESTAMP"),
@@ -677,7 +668,6 @@ def _sqlite_rebuild_tasks_table_if_needed(conn) -> None:
                   priority VARCHAR(2),
                   due DATE,
                   source VARCHAR(300) NOT NULL,
-                  cycle_id VARCHAR(40) REFERENCES cycles(id) ON DELETE SET NULL,
                   archived_at TIMESTAMPTZ,
                   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
                   updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -696,5 +686,13 @@ def _sqlite_rebuild_tasks_table_if_needed(conn) -> None:
         )
         conn.execute(text("DROP TABLE tasks"))
         conn.execute(text("ALTER TABLE tasks__memlineage_new RENAME TO tasks"))
+    finally:
+        conn.execute(text("PRAGMA foreign_keys=ON"))
+
+
+def _sqlite_drop_cycles_table_if_present(conn) -> None:
+    conn.execute(text("PRAGMA foreign_keys=OFF"))
+    try:
+        conn.execute(text("DROP TABLE IF EXISTS cycles"))
     finally:
         conn.execute(text("PRAGMA foreign_keys=ON"))

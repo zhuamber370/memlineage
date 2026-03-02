@@ -7,7 +7,7 @@
 
 **Goal:** Deliver a generic OpenClaw integration for MemLineage that installs as a workspace skill and does not require manual system-prompt paste or manual Python action wiring.
 
-**Architecture:** Package MemLineage integration as a native OpenClaw skill bundle (`SKILL.md` + `index.js` + REST client), install it into `<workspace>/skills/kms` via scripts, and keep auth via environment variables only. Existing backend APIs remain unchanged.
+**Architecture:** Package MemLineage integration as a native OpenClaw skill bundle (`SKILL.md` + `index.js` + REST client), install it into `<workspace>/skills/memlineage` via scripts, and keep auth via environment variables only. Existing backend APIs remain unchanged.
 
 **Tech Stack:** JavaScript (Node runtime in OpenClaw), shell scripts (`bash`), existing MemLineage REST API.
 
@@ -16,14 +16,14 @@
 ### Task 1: Add Native OpenClaw Skill Bundle
 
 **Files:**
-- Create: `<repo_root>/openclaw-skill/kms/SKILL.md`
-- Create: `<repo_root>/openclaw-skill/kms/index.js`
-- Create: `<repo_root>/openclaw-skill/kms/lib/client.js`
-- Create: `<repo_root>/openclaw-skill/kms/package.json`
+- Create: `<repo_root>/skills/memlineage/SKILL.md`
+- Create: `<repo_root>/skills/memlineage/index.js`
+- Create: `<repo_root>/skills/memlineage/lib/client.js`
+- Create: `<repo_root>/skills/memlineage/package.json`
 
 **Step 1: Write failing check (skill is not discoverable yet)**
 
-Run: `openclaw skills info kms --json`
+Run: `openclaw skills info memlineage --json`
 Expected: command fails or reports missing skill.
 
 **Step 2: Implement minimal skill bundle**
@@ -37,46 +37,46 @@ Use `KMS_BASE_URL` + `KMS_API_KEY`, with optional `KMS_ACTOR_ID`.
 
 **Step 3: Verify bundle syntax**
 
-Run: `node --check <repo_root>/openclaw-skill/kms/index.js`
+Run: `node --check <repo_root>/skills/memlineage/index.js`
 Expected: no syntax errors.
 
 **Step 4: Commit checkpoint**
 
 Run:
 ```bash
-git add <repo_root>/openclaw-skill/kms
-git commit -m "feat(skill): add native openclaw kms skill bundle"
+git add <repo_root>/skills/memlineage
+git commit -m "feat(skill): add native openclaw memlineage skill bundle"
 ```
 
 ### Task 2: Add Workspace Install/Uninstall Scripts
 
 **Files:**
-- Create: `<repo_root>/scripts/install_openclaw_kms_skill.sh`
-- Create: `<repo_root>/scripts/uninstall_openclaw_kms_skill.sh`
+- Create: `<repo_root>/scripts/install_openclaw_memlineage_skill.sh`
+- Create: `<repo_root>/scripts/uninstall_openclaw_memlineage_skill.sh`
 
 **Step 1: Write failing check**
 
-Run: `test -d ~/.openclaw/workspace/skills/kms && echo exists || echo missing`
+Run: `test -d ~/.openclaw/workspace/skills/memlineage && echo exists || echo missing`
 Expected: usually `missing` before install.
 
 **Step 2: Implement scripts**
 
 - Install script:
   - auto detect OpenClaw workspace path
-  - backup existing `<workspace>/skills/kms` with timestamp
-  - copy `openclaw-skill/kms` into `<workspace>/skills/kms`
-  - run `openclaw skills info kms --json` for post-check
+  - backup existing `<workspace>/skills/memlineage` with timestamp
+  - copy `skills/memlineage` into `<workspace>/skills/memlineage`
+  - run `openclaw skills info memlineage --json` for post-check
 - Uninstall script:
-  - remove `<workspace>/skills/kms`
-  - run `openclaw skills info kms --json` and handle missing state
+  - remove `<workspace>/skills/memlineage`
+  - run `openclaw skills info memlineage --json` and handle missing state
 
 **Step 3: Verify scripts**
 
 Run:
 ```bash
-bash <repo_root>/scripts/install_openclaw_kms_skill.sh
-openclaw skills info kms --json
-bash <repo_root>/scripts/uninstall_openclaw_kms_skill.sh
+bash <repo_root>/scripts/install_openclaw_memlineage_skill.sh
+openclaw skills info memlineage --json
+bash <repo_root>/scripts/uninstall_openclaw_memlineage_skill.sh
 ```
 Expected: install discoverable; uninstall removed.
 
@@ -84,14 +84,14 @@ Expected: install discoverable; uninstall removed.
 
 Run:
 ```bash
-git add <repo_root>/scripts/install_openclaw_kms_skill.sh <repo_root>/scripts/uninstall_openclaw_kms_skill.sh
-git commit -m "feat(skill): add workspace install and uninstall scripts for kms skill"
+git add <repo_root>/scripts/install_openclaw_memlineage_skill.sh <repo_root>/scripts/uninstall_openclaw_memlineage_skill.sh
+git commit -m "feat(skill): add workspace install and uninstall scripts for memlineage skill"
 ```
 
 ### Task 3: Update Documentation to Generic Flow
 
 **Files:**
-- Modify: `<repo_root>/docs/reports/2026-02-24-openclaw-kms-setup.md`
+- Modify: `<repo_root>/docs/reports/2026-02-24-openclaw-memlineage-setup.md`
 - Modify: `<repo_root>/skill/README.md`
 - Modify: `<repo_root>/README.md`
 
@@ -111,7 +111,7 @@ Remove:
 
 Run:
 ```bash
-rg -n "system prompt|openclaw_system_prompt|actions/.*\\.py|manual" <repo_root>/docs/reports/2026-02-24-openclaw-kms-setup.md <repo_root>/skill/README.md <repo_root>/README.md -S
+rg -n "system prompt|openclaw_system_prompt|actions/.*\\.py|manual" <repo_root>/docs/reports/2026-02-24-openclaw-memlineage-setup.md <repo_root>/skill/README.md <repo_root>/README.md -S
 ```
 Expected: no outdated instructions for mandatory manual prompt/action wiring.
 
@@ -119,8 +119,8 @@ Expected: no outdated instructions for mandatory manual prompt/action wiring.
 
 Run:
 ```bash
-git add <repo_root>/docs/reports/2026-02-24-openclaw-kms-setup.md <repo_root>/skill/README.md <repo_root>/README.md
-git commit -m "docs: switch openclaw kms setup to generic workspace skill flow"
+git add <repo_root>/docs/reports/2026-02-24-openclaw-memlineage-setup.md <repo_root>/skill/README.md <repo_root>/README.md
+git commit -m "docs: switch openclaw memlineage setup to generic workspace skill flow"
 ```
 
 ### Task 4: Final Verification
@@ -132,12 +132,12 @@ git commit -m "docs: switch openclaw kms setup to generic workspace skill flow"
 
 Run:
 ```bash
-node --check <repo_root>/openclaw-skill/kms/index.js
-node --check <repo_root>/openclaw-skill/kms/lib/client.js
-bash <repo_root>/scripts/install_openclaw_kms_skill.sh
-openclaw skills info kms --json
+node --check <repo_root>/skills/memlineage/index.js
+node --check <repo_root>/skills/memlineage/lib/client.js
+bash <repo_root>/scripts/install_openclaw_memlineage_skill.sh
+openclaw skills info memlineage --json
 openclaw skills check --json
-bash <repo_root>/scripts/uninstall_openclaw_kms_skill.sh
+bash <repo_root>/scripts/uninstall_openclaw_memlineage_skill.sh
 ```
 Expected: syntax clean, skill discoverable after install, removed after uninstall.
 

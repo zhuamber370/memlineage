@@ -166,11 +166,10 @@ def test_dry_run_diff_contains_task_enhanced_fields():
                 {
                     "type": "create_task",
                     "payload": {
-                        "title": "Task with cycle",
+                        "title": "Task with due",
                         "status": "todo",
                         "source": "test",
                         "topic_id": topic_id,
-                        "cycle_id": "cyc_123",
                         "due": "2099-04-01",
                     },
                 }
@@ -181,7 +180,6 @@ def test_dry_run_diff_contains_task_enhanced_fields():
     )
     assert dry.status_code == 200
     diff = dry.json()["diff"]
-    assert any("cycle_id" in line for line in diff)
     assert any("due" in line for line in diff)
 
 
@@ -199,7 +197,6 @@ def test_dry_run_summary_has_entity_and_field_counts():
                         "status": "todo",
                         "source": "test",
                         "topic_id": topic_id,
-                        "cycle_id": "cyc_123",
                     },
                 },
                 {
@@ -219,7 +216,6 @@ def test_dry_run_summary_has_entity_and_field_counts():
     summary = dry.json()["summary"]
     assert summary["task_create"] == 1
     assert summary["task_update"] == 1
-    assert summary["field_cycle_id"] == 1
     assert summary["field_due"] == 1
 
 
@@ -237,7 +233,7 @@ def test_dry_run_includes_structured_diff_items():
                         "status": "todo",
                         "source": "test",
                         "topic_id": topic_id,
-                        "cycle_id": "cyc_123",
+                        "priority": "P1",
                     },
                 }
             ],
@@ -252,7 +248,7 @@ def test_dry_run_includes_structured_diff_items():
     item = body["diff_items"][0]
     assert item["entity"] == "task"
     assert item["action"] == "create"
-    assert "cycle_id" in item["fields"]
+    assert "priority" in item["fields"]
     assert isinstance(item["text"], str)
 
 

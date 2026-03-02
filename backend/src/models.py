@@ -24,9 +24,6 @@ class Task(Base):
     priority: Mapped[Optional[str]] = mapped_column(String(2), nullable=True)
     due: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     source: Mapped[str] = mapped_column(String(300), nullable=False)
-    cycle_id: Mapped[Optional[str]] = mapped_column(
-        String(40), ForeignKey("cycles.id", ondelete="SET NULL"), nullable=True
-    )
     archived_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
@@ -218,25 +215,6 @@ class AuditEvent(Base):
     before_hash: Mapped[Optional[str]] = mapped_column(String(128))
     after_hash: Mapped[Optional[str]] = mapped_column(String(128))
     metadata_json: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
-
-
-class Cycle(Base):
-    __tablename__ = "cycles"
-
-    id: Mapped[str] = mapped_column(String(40), primary_key=True)
-    name: Mapped[str] = mapped_column(String(120), nullable=False)
-    start_date: Mapped[date] = mapped_column(Date, nullable=False)
-    end_date: Mapped[date] = mapped_column(Date, nullable=False)
-    status: Mapped[str] = mapped_column(String(20), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        server_default=func.now(),
-        onupdate=func.now(),
-    )
 
 
 class Topic(Base):

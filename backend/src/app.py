@@ -12,7 +12,6 @@ from src.middleware.error_handler import RequestIdMiddleware, install_error_hand
 from src.routes.audit import build_router as build_audit_router
 from src.routes.changes import build_router as build_changes_router
 from src.routes.context import build_router as build_context_router
-from src.routes.cycles import build_router as build_cycles_router
 from src.routes.ideas import build_router as build_ideas_router
 from src.routes.inbox import build_router as build_inbox_router
 from src.routes.journals import build_router as build_journals_router
@@ -63,7 +62,6 @@ def create_app(
     install_error_handlers(app)
     app.include_router(build_tasks_router(get_db_dep))
     app.include_router(build_topics_router(get_db_dep))
-    app.include_router(build_cycles_router(get_db_dep))
     app.include_router(build_journals_router(get_db_dep))
     app.include_router(build_knowledge_router(get_db_dep))
     app.include_router(build_inbox_router(get_db_dep))

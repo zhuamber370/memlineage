@@ -145,8 +145,8 @@ function summarizeRouteGraph(graph) {
   };
 }
 
-function createKmsClient(context) {
-  const config = (context && context.config && context.config.kms) || {};
+function createMemlineageClient(context) {
+  const config = (context && context.config && context.config.memlineage) || {};
   const baseUrl = process.env.KMS_BASE_URL || config.baseUrl || "";
   const apiKey = process.env.KMS_API_KEY || config.apiKey || "";
   const actorId = process.env.KMS_ACTOR_ID || config.actorId || "openclaw";
@@ -241,10 +241,6 @@ function createKmsClient(context) {
 
   async function listTopics() {
     return get("/api/v1/topics", {});
-  }
-
-  async function listCycles() {
-    return get("/api/v1/cycles", {});
   }
 
   async function listIdeas(params) {
@@ -933,7 +929,6 @@ function createKmsClient(context) {
     getTaskExecutionSnapshot,
     searchNotes,
     listTopics,
-    listCycles,
     listIdeas,
     listChanges,
     getChange,
@@ -985,5 +980,5 @@ function sleep(ms) {
 }
 
 module.exports = {
-  createKmsClient,
+  createMemlineageClient,
 };

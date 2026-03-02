@@ -46,11 +46,7 @@ python3 -m uvicorn src.app:app --reload --port 8000
 
 ### Core domains
 - `topics`
-  - `POST /api/v1/topics`
   - `GET /api/v1/topics`
-- `cycles`
-  - `POST /api/v1/cycles`
-  - `GET /api/v1/cycles`
 - `tasks`
   - `POST /api/v1/tasks`
   - `GET /api/v1/tasks`
