@@ -1,51 +1,51 @@
 > Documentation Status: Current
 > Last synced: 2026-03-01
 
-# 2026-03-01 DAG EntityLog 变更日志
+# 2026-03-01 DAG EntityLog Changelog
 
-## 范围
-- 执行计划：`docs/plans/2026-03-01-dag-entity-log-implementation-plan.md`
-- 目标：将 DAG 执行记录统一到 `entity_logs`，并完成前端执行面板的日志化改造与交互精简。
+## Scope
+- Implementation plan: `docs/plans/2026-03-01-dag-entity-log-implementation-plan.md`
+- Goal: unify DAG execution records into `entity_logs`, and simplify execution-panel interactions in the frontend.
 
-## 后端能力交付
-- 新增统一日志模型：`entity_logs`（`entity_type + entity_id`）
-- 节点与边统一日志 CRUD API 已落地（含 patch/delete）
-- 路由图接口返回节点/边 `has_logs`，用于前端徽标判断
-- 旧 `description` 保留兼容但不再作为执行日志主入口
+## Backend Delivery
+- Added unified log model: `entity_logs` (`entity_type + entity_id`).
+- Delivered node and edge log CRUD APIs (including patch/delete).
+- Added `has_logs` to route graph response for both nodes and edges.
+- Kept legacy `description` fields for compatibility, but no longer use them as the primary execution log entry.
 
-## 前端能力交付
-- 执行面板由 description 编辑器切换为日志面板（node inspector）
-- 新增步骤表单简化为：`标题 + 状态`
-- DAG 边线交互精简：
-  - 去掉边类型判断和边关系标签展示
-  - 去掉边日志入口与边选中交互
-  - 仅保留节点之间的连接线展示
-- idea 页面发起执行链路时，节点类型固定为 `goal`
-- DAG 布局引擎升级：
-  - 从自研层级排布切换到 `@dagrejs/dagre`
-  - 使用分层布局（LR）与交叉最小化策略，改善分支节点错位和视觉压迫问题
-  - 同步调整节点坐标与画布边界计算，提升自动适配稳定性
+## Frontend Delivery
+- Replaced description editor with a log panel in the execution inspector.
+- Simplified add-step form to `title + status`.
+- Simplified DAG edge interactions:
+  - Removed edge-type checks and relation-label rendering.
+  - Removed edge-log entry and edge selection interactions.
+  - Kept pure node-to-node connection lines only.
+- Fixed idea-to-route flow so created execution nodes use `goal` type.
+- Upgraded DAG layout engine:
+  - Migrated from custom layering to `@dagrejs/dagre`.
+  - Adopted layered LR layout with crossing minimization.
+  - Updated node coordinates and canvas bounds handling for more stable auto-fit behavior.
 
-## 本次收尾同步（2026-03-01）
-- 同步 `docs/reports/mvp-release-notes.md` 到最新交付状态
-- 补充本文件作为本轮实现变更日志
-- 计划文档补充执行完成记录（见计划文档末尾）
-- 补充 GitHub 提交变更摘要（见下文）
+## Final Sync (2026-03-01)
+- Synced `docs/reports/mvp-release-notes.md` with latest delivery status.
+- Added this changelog as the final record for this implementation.
+- Added execution-complete updates in the plan document.
+- Added GitHub commit summary (below).
 
-## GitHub 变更日志（本次 push）
+## GitHub Changes (This Push)
 - `feat(frontend): optimize DAG layout to reduce edge crossings`
 - `chore(frontend): adopt @dagrejs/dagre for production DAG auto-layout`
-- 主要涉及文件：
+- Main files:
   - `frontend/src/components/task-execution-panel.tsx`
   - `frontend/package.json`
   - `frontend/package-lock.json`
   - `docs/reports/mvp-release-notes.md`
   - `docs/reports/2026-03-01-dag-entity-log-changelog.md`
 
-## 验证记录
-- 前端构建：`cd frontend && npm run build`
-- 后端关键回归：`cd backend && pytest tests/test_routes_api.py -q`
+## Verification
+- Frontend build: `cd frontend && npm run build`
+- Backend targeted regression: `cd backend && pytest tests/test_routes_api.py -q`
 
-## 备注
-- 本地开发已按要求连接 `192.168.50.245` 数据库进行验证。
-- `postgresql` 本地化配置/产物不纳入本次远程提交内容。
+## Notes
+- Local validation used database host `192.168.50.245` as requested.
+- Local PostgreSQL environment artifacts were intentionally excluded from remote commits.

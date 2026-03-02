@@ -1,55 +1,55 @@
 # 2026-03-01 Home Dashboard Changelog
 
-## 交付范围
-- 新增首页看板路由 `/`，替代原先直接重定向到 `/tasks` 的行为。
-- 首页落地四块信息区：
+## Delivered Scope
+- Added the home dashboard route `/`, replacing the previous direct redirect to `/tasks`.
+- Delivered four sections on the home page:
   - Global Snapshot
-  - Task Board（统计 + 焦点任务）
-  - Changes Board（proposed 指标 + 最近提案）
-  - Knowledge Board（总数/分类 + 最近更新）
-- 新增聚合层 `frontend/src/lib/home-dashboard.ts`，统一承担首页统计与焦点排序逻辑。
-- 导航新增 Home 入口，补齐中英文文案（含 loading/error/empty）。
-- 深链筛选初始化：
-  - `/tasks` 支持 `status/priority/topic_id/workspace/task_id`
-  - `/knowledge` 支持 `status/category`
-  - `/changes` 支持 `status`
-- 异常韧性：
-  - tasks/knowledge/changes 独立加载与错误隔离
-  - 任一 API 失败不会导致整页空白
+  - Task Board (metrics + focus tasks)
+  - Changes Board (proposed count + recent proposals)
+  - Knowledge Board (total/category stats + recent updates)
+- Added aggregation layer: `frontend/src/lib/home-dashboard.ts`.
+- Added `Home` navigation entry and completed localized copy for loading/error/empty states.
+- Added deep-link filter hydration:
+  - `/tasks`: `status/priority/topic_id/workspace/task_id`
+  - `/knowledge`: `status/category`
+  - `/changes`: `status`
+- Improved resilience:
+  - Independent loading and error isolation for tasks/knowledge/changes
+  - A single API failure no longer blanks the entire page
 
-## 跳转策略
-- 首页全局卡片跳转并携带筛选语义：
-  - 任务总览 -> `/tasks`
-  - 进行中任务 -> `/tasks?status=in_progress`
-  - P0 进行中 -> `/tasks?status=in_progress&priority=P0`
-  - 待处理变更 -> `/changes?status=proposed`
-  - 知识总览 -> `/knowledge?status=active`
-- 焦点任务行动闭环：
-  - 打开任务 -> `/tasks?status=in_progress&priority=P0|...&task_id=<id>`
-  - 进入执行 -> `/tasks?status=in_progress&workspace=studio&task_id=<id>`
+## Navigation Strategy
+- Global cards jump with actionable filters:
+  - Task overview -> `/tasks`
+  - In-progress tasks -> `/tasks?status=in_progress`
+  - In-progress P0 tasks -> `/tasks?status=in_progress&priority=P0`
+  - Pending changes -> `/changes?status=proposed`
+  - Knowledge overview -> `/knowledge?status=active`
+- Focus task action loop:
+  - Open task -> `/tasks?status=in_progress&priority=P0|...&task_id=<id>`
+  - Enter execution workspace -> `/tasks?status=in_progress&workspace=studio&task_id=<id>`
 
-## 已执行验证命令
-- Task 1 失败校验：
-  - `cd frontend && npm run dev` + `curl -I http://127.0.0.1:3000/`（确认 `307 Location: /tasks`）
-- Task 2 失败校验：
-  - `cd frontend && npm run build`（在未实现聚合层时，报 `Module not found`）
-- Task 1~6 每任务完成后验证：
-  - `cd frontend && npm run build`（均通过）
-- Task 7 文档缺失校验：
-  - `rg -n "home dashboard|首页看板" docs/reports -S`（更新前无命中）
-- Task 7 文档差异校验：
+## Verification Commands Executed
+- Task 1 failure check:
+  - `cd frontend && npm run dev` + `curl -I http://127.0.0.1:3000/` (confirmed `307 Location: /tasks` before implementation)
+- Task 2 failure check:
+  - `cd frontend && npm run build` (before aggregation layer: `Module not found`)
+- Task 1-6 verification after each task:
+  - `cd frontend && npm run build` (all passed)
+- Task 7 documentation baseline check:
+  - `rg -n "home dashboard" docs/reports -S` (no complete entry before update)
+- Task 7 documentation diff check:
   - `git diff -- docs/reports`
 
-## 2026-03-02 稳定性修复（验收后）
-- 修复 `Open Studio` 跳转偶发串台：URL `task_id` 变化但页面仍停留旧任务的问题。
-- 修复 `TaskExecutionPanel` 在切任务时的旧请求回写，避免 DAG/日志展示到错误任务。
-- 修复任务列表在显示多状态时的分组顺序，统一为 `in_progress -> todo -> done -> cancelled`。
-- 清理本次排查产生的 `test://` 临时任务数据，恢复到真实数据集。
-- 验证：
-  - `cd frontend && npm run build`（PASS）
-  - Playwright 深链与列表点击回归：不同 `task_id` 可稳定进入对应任务详情（PASS）
+## 2026-03-02 Stability Fixes (Post-Acceptance)
+- Fixed intermittent `Open Studio` mismatch where URL `task_id` changed but old task detail remained visible.
+- Fixed stale request write-back in `TaskExecutionPanel` during task switching to prevent DAG/log data mixing.
+- Fixed list group ordering for multi-status display: `in_progress -> todo -> done -> cancelled`.
+- Removed temporary `test://` tasks created during debugging and restored clean runtime data.
+- Validation:
+  - `cd frontend && npm run build` (PASS)
+  - Playwright deep-link and list-click regression: switching between different `task_id` consistently opens the correct task detail (PASS)
 
-## 提交记录
+## Commit History
 - `6597d5f` feat(frontend): scaffold home dashboard route and nav entry
 - `5fedd5f` feat(frontend): add home dashboard aggregation and focus ranking helpers
 - `d4d2e69` feat(frontend): implement home dashboard sections and localized copy

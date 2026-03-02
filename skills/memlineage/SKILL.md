@@ -71,7 +71,7 @@ Use this skill when you need to read or write MemLineage data.
 - Do not ask user to specify endpoint/action unless disambiguation is strictly required.
 
 2. Task execution / DAG questions (highest priority)
-- If user asks about "当前节点 / DAG / 节点状态 / 分支关系 / 前后置 / 执行进度", use:
+- If user asks about "current node / DAG / node status / branch relations / dependencies / execution progress", use:
   1) `get_task_execution_snapshot` first
   2) then `get_route_graph` / `list_route_node_logs` only when extra detail is needed
 - Do not use `get_context_bundle` as the primary source for DAG answers.
@@ -92,28 +92,28 @@ Use this skill when you need to read or write MemLineage data.
 
 Use these mappings as default behavior:
 
-1. "今天有哪些待办最需要我先做？"
+1. "Which todos should I prioritize today?"
 - Use `list_tasks` + optional `list_task_views_summary`, then answer in natural language.
 
-2. "这个任务现在执行到哪个节点了？"
+2. "Which node is this task currently on?"
 - Use `get_task_execution_snapshot` first, then `get_route_graph` if needed.
 
-3. "把昨天的会议纪要记到日志里。"
+3. "Append yesterday's meeting notes to the journal."
 - This is explicit write intent: use `propose_append_journal`, then wait for confirmation before `commit_changes`.
 
-4. "按主题看一下最近的知识沉淀。"
+4. "Show recent knowledge updates by topic."
 - Use `list_note_topic_summary` + `list_knowledge` and summarize by topic.
 
-5. "帮我找跟 onboarding 相关的笔记。"
+5. "Find notes related to onboarding."
 - Use `search_notes` with query/topic filters; return top matches + ask whether to continue paging.
 
-6. "我想看这条变更的详情和影响。"
+6. "I want to see details and impact of this change."
 - Use `get_change`; explain impact in user language.
 
-7. "把上一个提交回滚。"
+7. "Rollback the last commit."
 - Explicit write intent: use `undo_last_commit`.
 
-8. "最近谁改了任务状态？"
+8. "Who changed task statuses recently?"
 - Use `list_audit_events` with filters, then summarize actor/action timeline.
 
 ## Response Style (MUST)
@@ -122,24 +122,24 @@ Use these mappings as default behavior:
 - Explain findings in business/task language, not database language.
 - Lead with the direct answer, then give key evidence.
 - Default answer structure:
-  1) 结论
-  2) 关键点
-  3) 下一步建议
+  1) Conclusion
+  2) Key points
+  3) Suggested next step
 
 2. Hide technical internals by default
 - Do not mention API paths, action names, table/field names, or SQL-like wording unless user explicitly asks.
 - Do not dump raw JSON unless user explicitly asks for raw output / debug output.
 
 3. Translate system terms into user language
-- Convert status/enums to natural phrasing (e.g. `execute` -> "执行中", `waiting` -> "等待中", `done` -> "已完成").
-- Prefer "当前在做什么/下一步是什么/有什么阻塞" over raw identifiers.
+- Convert status/enums to natural phrasing (e.g. `execute` -> "in progress", `waiting` -> "waiting", `done` -> "completed").
+- Prefer "what is happening now / what comes next / what is blocked" over raw identifiers.
 
 4. Structured but human
 - For task execution answers, use this order:
-  1) 当前进展（当前节点 + 状态）
-  2) 关键路径（前置/后置关系）
-  3) 风险或建议（如有）
-- Keep IDs and low-level metadata in a separate "如需我可展开" part.
+  1) Current progress (current node + status)
+  2) Critical path (dependency relations)
+  3) Risks or suggestions (if any)
+- Keep IDs and low-level metadata in a separate "I can expand technical details on request" section.
 
 5. Ambiguity handling
 - If task/route target is ambiguous, ask one concise disambiguation question with top candidates.
@@ -149,12 +149,12 @@ Use these mappings as default behavior:
 
 When backend returns machine error codes, convert to user-friendly wording:
 
-- `TOPIC_NOT_FOUND` -> "没找到该主题，请先选择已有主题。"
-- `TASK_NOT_FOUND` -> "没找到对应任务，请确认任务名称或 ID。"
-- `CHANGE_SET_NOT_FOUND` -> "没找到这条变更记录，可能已被提交或删除。"
-- `TASK_CANCEL_REASON_REQUIRED` -> "该任务标记为取消时，必须填写取消原因。"
-- `TASK_INVALID_STATUS_TRANSITION` -> "当前状态不允许直接这样变更，请先按流程切换状态。"
-- `NO_COMMIT_TO_UNDO` -> "当前没有可回滚的提交。"
+- `TOPIC_NOT_FOUND` -> "Topic not found. Please choose an existing topic first."
+- `TASK_NOT_FOUND` -> "Task not found. Please confirm the task name or ID."
+- `CHANGE_SET_NOT_FOUND` -> "Change set not found. It may already be committed or removed."
+- `TASK_CANCEL_REASON_REQUIRED` -> "A cancel reason is required when setting status to cancelled."
+- `TASK_INVALID_STATUS_TRANSITION` -> "This status transition is not allowed directly. Please follow the status flow."
+- `NO_COMMIT_TO_UNDO` -> "There is no commit available to undo."
 
 If code is unknown:
 - Explain what failed in plain language.
