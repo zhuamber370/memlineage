@@ -12,6 +12,7 @@ It adds a PR-like control loop in front of agent writes:
 Quick links:
 - Try locally in 60 seconds: [Dry-Run Demo](#60-second-dry-run-demo)
 - Run full stack: [Quickstart (Local)](#quickstart-local)
+- Manage skills in UI: <http://127.0.0.1:3000/skills>
 - Integrate with OpenClaw: [INTEGRATION.md](INTEGRATION.md)
 - Integrate with Codex: [Codex Integration](#codex-integration)
 - Runtime/API contract: [docs/guides/agent-api-surface.md](docs/guides/agent-api-surface.md)
@@ -22,6 +23,7 @@ Quick links:
 
 - **OpenClaw user**: jump to [OpenClaw Integration](#openclaw-integration).
 - **Codex user**: jump to [Codex Integration](#codex-integration).
+- **Skill operations first**: open <http://127.0.0.1:3000/skills>.
 - **Fast product check**: run [Quickstart (Local)](#quickstart-local), then follow [60-Second Dry-Run Demo](#60-second-dry-run-demo).
 
 ## Latest Release (v0.1.2)
@@ -35,6 +37,15 @@ Quick links:
 Supporting release docs:
 - [MVP Release Notes](docs/reports/mvp-release-notes.md)
 - [Home Dashboard Changelog (2026-03-01)](docs/reports/2026-03-01-home-dashboard-changelog.md)
+
+## Latest on main (Unreleased)
+
+- Added manual detect flow with auto runtime path fallback for skill operations.
+- Added Skill Management UI runtime actions for both OpenClaw and Codex:
+  - install / uninstall
+  - enable / disable
+  - update / health check
+- Added backend Skill Management API surface under `/api/v1/skills/*` for status, detect, path config, install, enable, update, and health.
 
 ## Evaluation Flow (after stack is running)
 
