@@ -4,7 +4,8 @@
 [![Open Issues](https://img.shields.io/github/issues/zhuamber370/memlineage)](https://github.com/zhuamber370/memlineage/issues)
 [![Last Commit](https://img.shields.io/github/last-commit/zhuamber370/memlineage)](https://github.com/zhuamber370/memlineage/commits/main)
 
-MemLineage is **OpenClaw's governed memory + task infrastructure**.
+MemLineage is an **open-source governed memory + task infrastructure** for agent-heavy workflows.
+It works with OpenClaw, Codex, and custom agent runtimes.
 
 It adds a PR-like control loop in front of agent writes:
 **dry-run -> diff preview -> human approve/reject -> commit -> audit (+ undo)**.
@@ -13,7 +14,7 @@ Quick links:
 - Try locally in 60 seconds: [Dry-Run Demo](#60-second-dry-run-demo)
 - Run full stack: [Quickstart (Local)](#quickstart-local)
 - Manage skills in UI: <http://127.0.0.1:3000/skills>
-- Integrate with OpenClaw: [INTEGRATION.md](INTEGRATION.md)
+- Agent integration guide: [INTEGRATION.md](INTEGRATION.md)
 - Integrate with Codex: [Codex Integration](#codex-integration)
 - Runtime/API contract: [docs/guides/agent-api-surface.md](docs/guides/agent-api-surface.md)
 - Production controls: [Safe-to-Write Checklist](docs/guides/safe-to-write-checklist.md)
@@ -23,8 +24,16 @@ Quick links:
 
 - **OpenClaw user**: jump to [OpenClaw Integration](#openclaw-integration).
 - **Codex user**: jump to [Codex Integration](#codex-integration).
+- **Other agent runtime user**: start with [Quickstart (Local)](#quickstart-local), then follow [Runtime/API contract](docs/guides/agent-api-surface.md).
 - **Skill operations first**: open <http://127.0.0.1:3000/skills>.
 - **Fast product check**: run [Quickstart (Local)](#quickstart-local), then follow [60-Second Dry-Run Demo](#60-second-dry-run-demo).
+
+## At a Glance
+
+- **Core promise**: make agent writes reviewable before apply, and reversible after apply.
+- **Governance loop**: `dry-run -> diff -> approve/reject -> commit -> audit -> undo`.
+- **Primary surfaces**: `/` (dashboard), `/changes` (review inbox), `/tasks`, `/knowledge`.
+- **Runtime coverage**: OpenClaw + Codex out of the box, plus custom runtimes via API contract.
 
 ## Latest Release (v0.1.2)
 
@@ -59,7 +68,7 @@ If you run agents in production, please share your checklist in [Discussion #20]
 
 ## Why MemLineage
 
-OpenClaw-heavy workflows often break when:
+Agent-heavy workflows often break when:
 - agent writes silently pollute memory and docs
 - changes are hard to review, trace, and roll back
 - tasks, knowledge, and execution context drift across tools
@@ -68,7 +77,7 @@ MemLineage keeps workflows **governed, traceable, and reversible**.
 
 ## Who It Is For
 
-- Teams or solo builders using OpenClaw where memory quality matters
+- Teams or solo builders running OpenClaw, Codex, or custom agents where memory quality matters
 - Workflows that require human approval for write operations
 - Anyone who needs change audit trail and rollback for agent-generated updates
 
