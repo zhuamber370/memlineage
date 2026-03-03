@@ -93,20 +93,6 @@ MemLineage keeps workflows **governed, traceable, and reversible**.
 - **Operational workspace**: `/tasks` + `/knowledge` for day-to-day execution
 - **Rollback safety**: undo the last commit when needed
 
-## Governance Flow (PR-like changes)
-
-```mermaid
-flowchart LR
-A["Agent / Skill proposes change"] --> B["MemLineage dry-run"]
-B --> C["Diff preview"]
-C --> D{"Human review"}
-D -- Reject --> E["Reject + audit log"]
-D -- Approve --> F["Commit"]
-F --> G["Writes applied (tasks / notes / knowledge)"]
-F --> H["Audit trail"]
-H --> I["Undo / rollback (if needed)"]
-```
-
 ## 60-Second Dry-Run Demo
 
 ### 0) Prereq
