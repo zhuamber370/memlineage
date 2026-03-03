@@ -194,7 +194,15 @@ For PostgreSQL setup and deeper runtime options, see:
 
 ## OpenClaw Integration
 
-Install workspace skill:
+Option A (recommended): manage install/uninstall/enable/disable/update from UI:
+
+- Open <http://127.0.0.1:3000/skills>
+- Use the `OpenClaw` card actions
+- Click `Detect` to auto-resolve runtime path (OPENCLAW_WORKSPACE_DIR -> OPENCLAW_CONFIG_PATH/openclaw.json -> ~/.openclaw/workspace)
+- If auto-detect fails, provide manual runtime root path, then click `Save Path` and `Detect` again
+- Note: this requires MemLineage backend and OpenClaw runtime on the same machine
+
+Option B: install via script:
 
 ```bash
 bash scripts/install_openclaw_memlineage_skill.sh
@@ -202,16 +210,32 @@ openclaw skills info memlineage --json
 openclaw skills check --json
 ```
 
-## Codex Integration
-
-Install skill into Codex local skills directory:
+Uninstall:
 
 ```bash
-mkdir -p ~/.codex/skills
-if [ -d ~/.codex/skills/memlineage ]; then \
-  mv ~/.codex/skills/memlineage ~/.codex/skills/memlineage.backup.$(date +%Y%m%d_%H%M%S); \
-fi
-cp -R skills/memlineage ~/.codex/skills/memlineage
+bash scripts/uninstall_openclaw_memlineage_skill.sh
+```
+
+## Codex Integration
+
+Option A (recommended): manage install/uninstall/enable/disable/update from UI:
+
+- Open <http://127.0.0.1:3000/skills>
+- Use the `Codex` card actions
+- Click `Detect` to auto-resolve runtime path (CODEX_HOME -> ~/.codex)
+- If auto-detect fails, provide manual runtime root path, then click `Save Path` and `Detect` again
+- Note: this requires MemLineage backend and Codex runtime on the same machine
+
+Option B: install via script:
+
+```bash
+bash scripts/install_codex_memlineage_skill.sh
+```
+
+Uninstall:
+
+```bash
+bash scripts/uninstall_codex_memlineage_skill.sh
 ```
 
 After install, start a new Codex session to load the updated skill list.

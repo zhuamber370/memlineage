@@ -52,6 +52,20 @@ export async function apiPatch<T>(path: string, payload: unknown): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export async function apiPut<T>(path: string, payload: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "PUT",
+    headers: apiHeaders(),
+    body: JSON.stringify(payload),
+    cache: "no-store"
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`PUT ${path} failed: ${res.status} ${text}`);
+  }
+  return res.json() as Promise<T>;
+}
+
 
 export async function apiDelete(path: string): Promise<void> {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -63,4 +77,119 @@ export async function apiDelete(path: string): Promise<void> {
     const text = await res.text();
     throw new Error(`DELETE ${path} failed: ${res.status} ${text}`);
   }
+}
+
+export async function apiDeleteJson<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "DELETE",
+    headers: apiHeaders(),
+    cache: "no-store"
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`DELETE ${path} failed: ${res.status} ${text}`);
+  }
+  return res.json() as Promise<T>;
+}
+
+export type SkillAgent = "openclaw" | "codex";
+
+export type SkillStatus = {
+  agent: SkillAgent;
+  detect_status: "unknown" | "ready" | "failed";
+  needs_manual_path: boolean;
+  manual_path_configured: boolean;
+  path_mode: "none" | "auto" | "manual";
+  runtime_status: "unknown" | "installed" | "not_installed";
+  runtime_version?: string | null;
+  skill_status: "unknown" | "installed" | "not_installed";
+  skill_enabled: boolean;
+  last_checked_at?: string | null;
+  last_error?: string | null;
+  last_checks: string[];
+  last_warnings: Array<Record<string, unknown>>;
+  bundled_version?: string | null;
+  installed_version?: string | null;
+  update_available: boolean;
+};
+
+export type SkillStatusList = {
+  items: SkillStatus[];
+};
+
+export type SkillHealthWarning = {
+  code: string;
+  message: string;
+  details?: Record<string, unknown>;
+};
+
+export type SkillHealth = {
+  agent: SkillAgent;
+  ok: boolean;
+  checks: string[];
+  warnings: SkillHealthWarning[];
+};
+
+export type SkillVersion = {
+  agent: SkillAgent;
+  bundled_version?: string | null;
+  installed_version?: string | null;
+  update_available: boolean;
+};
+
+export type SkillOperation = {
+  action: string;
+  status: SkillStatus;
+};
+
+export function listSkills(): Promise<SkillStatusList> {
+  return apiGet<SkillStatusList>("/api/v1/skills");
+}
+
+export function getSkillStatus(agent: SkillAgent): Promise<SkillStatus> {
+  return apiGet<SkillStatus>(`/api/v1/skills/${agent}`);
+}
+
+export function installSkill(agent: SkillAgent): Promise<SkillOperation> {
+  return apiPost<SkillOperation>(`/api/v1/skills/${agent}/install`, { force: false });
+}
+
+export function forceInstallSkill(agent: SkillAgent): Promise<SkillOperation> {
+  return apiPost<SkillOperation>(`/api/v1/skills/${agent}/install`, { force: true });
+}
+
+export function uninstallSkill(agent: SkillAgent): Promise<SkillOperation> {
+  return apiDeleteJson<SkillOperation>(`/api/v1/skills/${agent}`);
+}
+
+export function enableSkill(agent: SkillAgent): Promise<SkillOperation> {
+  return apiPost<SkillOperation>(`/api/v1/skills/${agent}/enable`, {});
+}
+
+export function disableSkill(agent: SkillAgent): Promise<SkillOperation> {
+  return apiPost<SkillOperation>(`/api/v1/skills/${agent}/disable`, {});
+}
+
+export function checkSkillHealth(agent: SkillAgent): Promise<SkillHealth> {
+  return apiGet<SkillHealth>(`/api/v1/skills/${agent}/health`);
+}
+
+export function getSkillVersion(agent: SkillAgent): Promise<SkillVersion> {
+  return apiGet<SkillVersion>(`/api/v1/skills/${agent}/version`);
+}
+
+export function updateSkill(agent: SkillAgent): Promise<SkillVersion> {
+  return apiPost<SkillVersion>(`/api/v1/skills/${agent}/update`, { force: false });
+}
+
+export function forceUpdateSkill(agent: SkillAgent): Promise<SkillVersion> {
+  return apiPost<SkillVersion>(`/api/v1/skills/${agent}/update`, { force: true });
+}
+
+export function configureSkillPath(agent: SkillAgent, configuredPath: string): Promise<SkillStatus> {
+  return apiPut<SkillStatus>(`/api/v1/skills/${agent}/config`, { configured_path: configuredPath });
+}
+
+export function detectSkill(agent: SkillAgent): Promise<SkillStatus> {
+  return apiPost<SkillStatus>(`/api/v1/skills/${agent}/detect`, {});
 }

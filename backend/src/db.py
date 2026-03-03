@@ -462,6 +462,30 @@ def ensure_runtime_schema(engine) -> None:
         WHERE client_request_id IS NOT NULL
         """,
         """
+        CREATE TABLE IF NOT EXISTS skill_runtimes (
+          agent VARCHAR(20) PRIMARY KEY,
+          configured_path TEXT,
+          detect_status VARCHAR(20) NOT NULL DEFAULT 'unknown',
+          runtime_status VARCHAR(20) NOT NULL DEFAULT 'unknown',
+          runtime_detected BOOLEAN NOT NULL DEFAULT FALSE,
+          runtime_version VARCHAR(120),
+          resolved_root_path TEXT,
+          resolved_root_source VARCHAR(20),
+          last_error TEXT,
+          last_checks_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+          last_warnings_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+          last_checked_at TIMESTAMPTZ,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """,
+        "ALTER TABLE skill_runtimes ADD COLUMN IF NOT EXISTS runtime_status VARCHAR(20)",
+        "ALTER TABLE skill_runtimes ADD COLUMN IF NOT EXISTS resolved_root_path TEXT",
+        "ALTER TABLE skill_runtimes ADD COLUMN IF NOT EXISTS resolved_root_source VARCHAR(20)",
+        "UPDATE skill_runtimes SET runtime_status = 'unknown' WHERE runtime_status IS NULL OR BTRIM(runtime_status) = ''",
+        "UPDATE skill_runtimes SET last_checks_json = '[]'::jsonb WHERE last_checks_json IS NULL",
+        "UPDATE skill_runtimes SET last_warnings_json = '[]'::jsonb WHERE last_warnings_json IS NULL",
+        """
         DO $$
         BEGIN
           IF NOT EXISTS (
@@ -537,6 +561,28 @@ def _ensure_runtime_schema_sqlite(engine) -> None:
             )
         )
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_entity_logs_route_id ON entity_logs (route_id)"))
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS skill_runtimes (
+                  agent VARCHAR(20) PRIMARY KEY,
+                  configured_path TEXT,
+                  detect_status VARCHAR(20) NOT NULL DEFAULT 'unknown',
+                  runtime_status VARCHAR(20) NOT NULL DEFAULT 'unknown',
+                  runtime_detected BOOLEAN NOT NULL DEFAULT 0,
+                  runtime_version VARCHAR(120),
+                  resolved_root_path TEXT,
+                  resolved_root_source VARCHAR(20),
+                  last_error TEXT,
+                  last_checks_json JSON NOT NULL DEFAULT '[]',
+                  last_warnings_json JSON NOT NULL DEFAULT '[]',
+                  last_checked_at TIMESTAMPTZ,
+                  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+                """
+            )
+        )
         _sqlite_add_column_if_missing(conn, "ideas", "task_id VARCHAR(40)")
         _sqlite_add_column_if_missing(conn, "routes", "task_id VARCHAR(40)")
         _sqlite_add_column_if_missing(conn, "routes", "parent_route_id VARCHAR(40)")
@@ -545,9 +591,19 @@ def _ensure_runtime_schema_sqlite(engine) -> None:
         _sqlite_add_column_if_missing(conn, "node_logs", "log_type VARCHAR(20) NOT NULL DEFAULT 'note'")
         _sqlite_add_column_if_missing(conn, "node_logs", "source_ref TEXT")
         _sqlite_add_column_if_missing(conn, "notes", "category VARCHAR(40) NOT NULL DEFAULT 'mechanism_spec'")
+        _sqlite_add_column_if_missing(
+            conn, "skill_runtimes", "runtime_status VARCHAR(20) NOT NULL DEFAULT 'unknown'"
+        )
+        _sqlite_add_column_if_missing(conn, "skill_runtimes", "resolved_root_path TEXT")
+        _sqlite_add_column_if_missing(conn, "skill_runtimes", "resolved_root_source VARCHAR(20)")
         conn.execute(text("UPDATE route_edges SET description = '' WHERE description IS NULL"))
         conn.execute(text("UPDATE node_logs SET log_type = 'note' WHERE log_type IS NULL"))
         conn.execute(text("UPDATE notes SET category = 'mechanism_spec' WHERE category IS NULL"))
+        conn.execute(
+            text(
+                "UPDATE skill_runtimes SET runtime_status = 'unknown' WHERE runtime_status IS NULL OR TRIM(runtime_status) = ''"
+            )
+        )
         conn.execute(
             text(
                 """

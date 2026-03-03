@@ -19,6 +19,7 @@ from src.routes.knowledge import build_router as build_knowledge_router
 from src.routes.links import build_router as build_links_router
 from src.routes.notes import build_router as build_notes_router
 from src.routes.routes import build_router as build_routes_router
+from src.routes.skills import build_router as build_skills_router
 from src.routes.tasks import build_router as build_tasks_router
 from src.routes.topics import build_router as build_topics_router
 
@@ -72,6 +73,7 @@ def create_app(
     app.include_router(build_changes_router(get_db_dep))
     app.include_router(build_context_router(get_db_dep))
     app.include_router(build_audit_router(get_db_dep))
+    app.include_router(build_skills_router(get_db_dep))
 
     @app.get("/health")
     def health():

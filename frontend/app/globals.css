@@ -2570,3 +2570,133 @@ a {
     grid-template-columns: 1fr;
   }
 }
+
+.skillsPage {
+  display: grid;
+  gap: 12px;
+}
+
+.skillsHero {
+  background:
+    radial-gradient(520px 180px at 8% -20%, #e8f2ff 0%, transparent 70%),
+    radial-gradient(660px 180px at 90% -30%, #ffe8de 0%, transparent 72%),
+    var(--panel);
+}
+
+.skillsLocalOnly {
+  max-width: 960px;
+}
+
+.skillsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.skillsCard {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.skillsCardHeader {
+  display: grid;
+  gap: 6px;
+}
+
+.skillsActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.skillsPathEditor {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.skillsPathInput {
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  padding: 8px 10px;
+  font-family: "IBM Plex Mono", "Courier New", monospace;
+  font-size: 0.82rem;
+}
+
+.skillsPathInput:focus-visible {
+  outline: none;
+  border-color: var(--focus);
+}
+
+.skillsAdvancedToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.skillsPathRows {
+  display: grid;
+  gap: 6px;
+}
+
+.skillsPathRow {
+  display: grid;
+  gap: 4px;
+}
+
+.skillsPathLabel {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.skillsPathValue {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  padding: 6px 8px;
+  font-family: "IBM Plex Mono", "Courier New", monospace;
+  font-size: 0.75rem;
+  word-break: break-all;
+}
+
+.skillsVersionGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.skillsHealthGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.skillsList {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+}
+
+@media (max-width: 980px) {
+  .skillsGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .skillsVersionGrid {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+
+  .skillsHealthGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .skillsPathEditor {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

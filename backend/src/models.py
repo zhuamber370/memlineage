@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Optional
 
-from sqlalchemy import CheckConstraint, JSON, Date, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Boolean, CheckConstraint, JSON, Date, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.db import Base
@@ -449,6 +449,29 @@ class EntityLog(Base):
     actor_type: Mapped[str] = mapped_column(String(20), nullable=False, default="human")
     actor_id: Mapped[str] = mapped_column(String(80), nullable=False, default="local")
     content: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+
+class SkillRuntime(Base):
+    __tablename__ = "skill_runtimes"
+
+    agent: Mapped[str] = mapped_column(String(20), primary_key=True)
+    configured_path: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    detect_status: Mapped[str] = mapped_column(String(20), nullable=False, default="unknown")
+    runtime_status: Mapped[str] = mapped_column(String(20), nullable=False, default="unknown")
+    runtime_detected: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    runtime_version: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    resolved_root_path: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    resolved_root_source: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    last_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    last_checks_json: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    last_warnings_json: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    last_checked_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

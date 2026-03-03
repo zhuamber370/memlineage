@@ -8,6 +8,7 @@ This is the documentation entrypoint for MemLineage.
 - Safe-to-Write checklist: [guides/safe-to-write-checklist.md](guides/safe-to-write-checklist.md)
 - Contributor onboarding: [../CONTRIBUTING.md](../CONTRIBUTING.md)
 - Integration guide (OpenClaw + Codex): [../INTEGRATION.md](../INTEGRATION.md)
+- Skill Management UI: `http://127.0.0.1:3000/skills` (local-host operations)
 
 ## Runtime Contracts (Authoritative)
 

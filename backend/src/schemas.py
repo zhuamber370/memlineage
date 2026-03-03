@@ -13,6 +13,79 @@ TopicStatus = Literal["active", "watch", "archived"]
 NoteStatus = Literal["active", "archived"]
 KnowledgeStatus = Literal["active", "archived"]
 KnowledgeCategory = Literal["ops_manual", "mechanism_spec", "decision_record"]
+SkillAgent = Literal["openclaw", "codex"]
+SkillDetectStatus = Literal["unknown", "ready", "failed"]
+SkillRuntimeStatus = Literal["unknown", "installed", "not_installed"]
+SkillInstallStatus = Literal["unknown", "installed", "not_installed"]
+SkillPathMode = Literal["none", "auto", "manual"]
+
+
+class SkillStatusOut(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    agent: SkillAgent
+    detect_status: SkillDetectStatus
+    needs_manual_path: bool
+    manual_path_configured: bool
+    path_mode: SkillPathMode
+    runtime_status: SkillRuntimeStatus
+    runtime_version: Optional[str]
+    skill_status: SkillInstallStatus
+    skill_enabled: bool
+    last_checked_at: Optional[datetime]
+    last_error: Optional[str]
+    last_checks: list[str]
+    last_warnings: list[dict[str, Any]]
+    bundled_version: Optional[str]
+    installed_version: Optional[str]
+    update_available: bool
+
+
+class SkillStatusListOut(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    items: list[SkillStatusOut]
+
+
+class SkillPathConfigIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    configured_path: str = Field(min_length=1)
+
+
+class SkillInstallIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    force: bool = False
+
+
+class SkillHealthWarningOut(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    code: str
+    message: str
+    details: Optional[dict[str, Any]] = None
+
+
+class SkillHealthOut(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    agent: SkillAgent
+    ok: bool
+    checks: list[str]
+    warnings: list[SkillHealthWarningOut]
+
+
+class SkillVersionOut(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    agent: SkillAgent
+    bundled_version: Optional[str] = None
+    installed_version: Optional[str] = None
+    update_available: bool
+
+
+class SkillOperationOut(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    action: str
+    status: SkillStatusOut
 
 
 class TaskCreate(BaseModel):

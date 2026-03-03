@@ -22,26 +22,37 @@ Reads are safe by default.
 
 1) Run MemLineage backend + frontend (see `README.md` Quickstart)
 
-2) Install OpenClaw skill:
+2) Option A (recommended): use Skill Management UI
+
+- Open `http://127.0.0.1:3000/skills`
+- Manage install / uninstall / enable / disable / update for OpenClaw and Codex
+- Click `Detect` to auto-resolve default runtime path for each agent
+- If auto-detect fails, provide manual runtime root path, then click `Save Path` and `Detect` again
+- Constraint: backend host and agent runtime host must be the same machine
+
+3) Option B (CLI scripts): Install OpenClaw skill
 
 ```bash
 bash scripts/install_openclaw_memlineage_skill.sh
 ```
 
-3) Install Codex skill:
+4) Install Codex skill:
 
 ```bash
-mkdir -p ~/.codex/skills
-if [ -d ~/.codex/skills/memlineage ]; then \
-  mv ~/.codex/skills/memlineage ~/.codex/skills/memlineage.backup.$(date +%Y%m%d_%H%M%S); \
-fi
-cp -R skills/memlineage ~/.codex/skills/memlineage
+bash scripts/install_codex_memlineage_skill.sh
 ```
 
-4) Configure env (where OpenClaw/Codex runs)
+5) Configure env (where OpenClaw/Codex runs)
 
 - `KMS_BASE_URL=http://127.0.0.1:8000`
 - `KMS_API_KEY=...`
+
+Quick uninstall commands (script path):
+
+```bash
+bash scripts/uninstall_openclaw_memlineage_skill.sh
+bash scripts/uninstall_codex_memlineage_skill.sh
+```
 
 ---
 

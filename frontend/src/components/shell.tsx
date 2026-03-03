@@ -9,7 +9,8 @@ const links = [
   { href: "/", key: "nav.home" },
   { href: "/tasks", key: "nav.tasks" },
   { href: "/knowledge", key: "nav.knowledge" },
-  { href: "/changes", key: "nav.changes" }
+  { href: "/changes", key: "nav.changes" },
+  { href: "/skills", key: "nav.skills" }
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
