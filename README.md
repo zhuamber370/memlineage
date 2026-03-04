@@ -59,6 +59,9 @@ Supporting release docs:
 - Added backend Skill Management API surface under `/api/v1/skills/*` for status, detect, path config, install, enable, update, and health.
 - Updated Home dashboard layout by removing duplicated `Changes Board` and tightening task/knowledge panel density.
 - Added left-sidebar `Changes` pending badge reminder and fixed immediate count refresh after commit/reject/undo.
+- Added Home `Database Safety` card with:
+  - local backup download (`.mlbk`)
+  - local file restore (direct DB overwrite after explicit confirmation)
 
 ## Evaluation Flow (after stack is running)
 

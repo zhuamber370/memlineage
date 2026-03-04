@@ -62,6 +62,20 @@
   - `cd frontend && npm run build` (PASS)
   - manual/Playwright interaction check: count changes instantly after commit/reject (PASS)
 
+## 2026-03-04 Home Database Safety Panel
+- Added `Database Safety` card on Home (no standalone page) with two actions:
+  - `Create Backup & Download` for local `.mlbk` backup package
+  - local file restore upload with direct overwrite behavior
+- Restore interaction includes minimum destructive safeguards:
+  - overwrite acknowledgment checkbox
+  - final browser confirm dialog before submit
+- Backup packages use deterministic archive structure:
+  - `manifest.json`
+  - payload file (`payload.sqlite3` or `payload.pgdump`)
+- Validation:
+  - `cd backend && python3 -m pytest -q tests/test_db_backup_api.py` (PASS)
+  - `cd frontend && npm run build` (PASS)
+
 ## Commit History
 - `6597d5f` feat(frontend): scaffold home dashboard route and nav entry
 - `5fedd5f` feat(frontend): add home dashboard aggregation and focus ranking helpers
