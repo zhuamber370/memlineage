@@ -62,6 +62,8 @@ Supporting release docs:
 - Added Home `Database Safety` card with:
   - local backup download (`.mlbk`)
   - local file restore (direct DB overwrite after explicit confirmation)
+- Backup download now keeps timestamped filename from backend (`memlineage-backup-YYYYMMDD-HHMMSS.mlbk`) in browser fetch flow.
+- PostgreSQL backup/restore now targets business schema only (`public`) to avoid extension ownership conflicts during restore, and logs command stderr summary on failure.
 
 ## Evaluation Flow (after stack is running)
 

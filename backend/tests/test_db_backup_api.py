@@ -1,5 +1,6 @@
 import io
 import json
+import re
 import zipfile
 from pathlib import Path
 
@@ -57,6 +58,21 @@ def test_backup_download_contains_manifest_and_payload_sqlite(isolated_db_env):
     assert manifest["format"] == "memlineage-db-backup"
     assert manifest["version"] == 1
     assert manifest["backend"] == "sqlite"
+
+
+def test_backup_download_exposes_timestamped_filename_for_browser_fetch(isolated_db_env):
+    client = make_client()
+
+    resp = client.get("/api/v1/admin/db/backup", headers={"origin": "http://localhost:3000"})
+    assert resp.status_code == 200, resp.text
+
+    expose_headers = resp.headers.get("access-control-expose-headers", "")
+    exposed = {part.strip().lower() for part in expose_headers.split(",") if part.strip()}
+    assert "content-disposition" in exposed
+
+    disposition = resp.headers.get("content-disposition", "")
+    match = re.search(r'filename="(memlineage-backup-\d{8}-\d{6}\.mlbk)"', disposition)
+    assert match, disposition
 
 
 def test_restore_overwrites_data_from_uploaded_backup_sqlite(isolated_db_env):
@@ -129,6 +145,7 @@ def test_postgres_backup_uses_pg_dump(monkeypatch: pytest.MonkeyPatch):
     assert backend == "postgres"
     assert seen["cmd"][0] == "pg_dump"
     assert "--format=custom" in seen["cmd"]
+    assert "--schema=public" in seen["cmd"]
     assert "--dbname" in seen["cmd"]
     assert seen["env"]["PGPASSWORD"] == "secret"
 
@@ -179,6 +196,29 @@ def test_postgres_restore_uses_pg_restore(monkeypatch: pytest.MonkeyPatch):
     assert seen["cmd"][0] == "pg_restore"
     assert "--clean" in seen["cmd"]
     assert "--if-exists" in seen["cmd"]
+    assert "--schema=public" in seen["cmd"]
     assert "--dbname" in seen["cmd"]
     assert seen["env"]["PGPASSWORD"] == "secret"
     assert seen["payload"] == b"restore-target-payload"
+
+
+def test_pg_command_failure_logs_stderr(monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture):
+    engine = create_engine("postgresql+psycopg://afkms:secret@127.0.0.1:5432/afkms", future=True)
+    service = DbBackupService(_FakeSession(engine))
+
+    class _RunResult:
+        returncode = 1
+        stdout = ""
+        stderr = "permission denied for table _timescaledb_catalog.hypertable"
+
+    def _fake_run(cmd, env=None, capture_output=False, text=False, check=False):  # noqa: ARG001
+        return _RunResult()
+
+    monkeypatch.setattr("src.services.db_backup_service.subprocess.run", _fake_run)
+
+    with caplog.at_level("ERROR"):
+        with pytest.raises(ValueError, match="DB_BACKUP_COMMAND_FAILED"):
+            service._run_pg_command(["pg_restore", "--dbname", "afkms"])
+
+    assert "Postgres command failed" in caplog.text
+    assert "permission denied for table _timescaledb_catalog.hypertable" in caplog.text

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import json
+import logging
 import os
 import subprocess
 import tempfile
@@ -15,6 +16,10 @@ from sqlalchemy.orm import Session
 
 BACKUP_FORMAT = "memlineage-db-backup"
 BACKUP_VERSION = 1
+POSTGRES_APP_SCHEMA = "public"
+LOG_OUTPUT_MAX_CHARS = 1200
+
+logger = logging.getLogger(__name__)
 
 
 class DbBackupService:
@@ -123,9 +128,17 @@ class DbBackupService:
         try:
             proc = subprocess.run(cmd, env=self._postgres_env(), capture_output=True, text=True, check=False)
         except FileNotFoundError as exc:
+            logger.exception("Postgres command tool missing. command=%s", " ".join(cmd))
             raise ValueError("DB_BACKUP_TOOL_NOT_FOUND") from exc
 
         if proc.returncode != 0:
+            output = self._summarize_command_output(proc.stderr, proc.stdout)
+            logger.error(
+                "Postgres command failed. command=%s returncode=%s output=%s",
+                " ".join(cmd),
+                proc.returncode,
+                output,
+            )
             raise ValueError("DB_BACKUP_COMMAND_FAILED")
 
     def _export_postgres(self) -> bytes:
@@ -145,6 +158,7 @@ class DbBackupService:
             cmd = [
                 "pg_dump",
                 "--format=custom",
+                f"--schema={POSTGRES_APP_SCHEMA}",
                 "--host",
                 host,
                 "--port",
@@ -183,6 +197,7 @@ class DbBackupService:
                 "pg_restore",
                 "--clean",
                 "--if-exists",
+                f"--schema={POSTGRES_APP_SCHEMA}",
                 "--no-owner",
                 "--no-privileges",
                 "--host",
@@ -199,6 +214,15 @@ class DbBackupService:
         finally:
             if temp_path.exists():
                 temp_path.unlink()
+
+    def _summarize_command_output(self, stderr: str, stdout: str) -> str:
+        normalized = (stderr or "").strip() or (stdout or "").strip()
+        if not normalized:
+            return "<empty>"
+        collapsed = " ".join(normalized.split())
+        if len(collapsed) <= LOG_OUTPUT_MAX_CHARS:
+            return collapsed
+        return f"{collapsed[:LOG_OUTPUT_MAX_CHARS]}...(truncated)"
 
     def _parse_backup_package(self, backup_blob: bytes) -> dict[str, object]:
         try:

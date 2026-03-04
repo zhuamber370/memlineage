@@ -76,6 +76,21 @@
   - `cd backend && python3 -m pytest -q tests/test_db_backup_api.py` (PASS)
   - `cd frontend && npm run build` (PASS)
 
+## 2026-03-04 PostgreSQL Restore Hardening
+- Fixed browser-side backup filename fallback by exposing `Content-Disposition` / `X-Backup-Backend` in CORS response headers.
+- Hardened PostgreSQL backup/restore command scope to `public` schema only:
+  - `pg_dump --schema=public`
+  - `pg_restore --schema=public`
+- Added backend error logging for failed PostgreSQL commands:
+  - command string
+  - return code
+  - stderr/stdout summary (truncated)
+- This resolves extension ownership conflicts (such as Timescale extension/system schema permissions) that previously caused `DB_BACKUP_COMMAND_FAILED`.
+- Validation:
+  - `cd backend && python3 -m pytest -q tests/test_db_backup_api.py -k "postgres_backup_uses_pg_dump or postgres_restore_uses_pg_restore or pg_command_failure_logs_stderr"` (PASS)
+  - `cd backend && python3 -m pytest -q tests/test_db_backup_api.py` (PASS)
+  - API round-trip check: `GET /api/v1/admin/db/backup` then `POST /api/v1/admin/db/restore` with same backup blob (PASS)
+
 ## Commit History
 - `6597d5f` feat(frontend): scaffold home dashboard route and nav entry
 - `5fedd5f` feat(frontend): add home dashboard aggregation and focus ranking helpers

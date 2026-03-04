@@ -120,6 +120,9 @@ python3 -m uvicorn src.app:app --reload --port 8000
   - `GET /api/v1/changes/{change_set_id}`
   - `POST /api/v1/changes/{change_set_id}/commit`
   - `DELETE /api/v1/changes/{change_set_id}`
+- `db-admin`
+  - `GET /api/v1/admin/db/backup`
+  - `POST /api/v1/admin/db/restore`
 - `commits`
   - `POST /api/v1/commits/undo-last`
 - `audit`
@@ -161,6 +164,13 @@ python3 -m uvicorn src.app:app --reload --port 8000
 - `knowledge` API currently persists into the `notes` table (`category: ops_manual | mechanism_spec | decision_record`).
 - `knowledge_items`/`knowledge_evidences` tables may exist in schema history, but runtime knowledge CRUD is currently note-backed.
 - Route graph logs now use unified `entity_logs` storage (`entity_type + entity_id`), while legacy node log responses remain readable for compatibility.
+
+## DB Backup/Restore Notes
+
+- Backup payload package format is `.mlbk` (`manifest.json` + payload file).
+- PostgreSQL backup/restore commands currently scope to `public` schema only.
+- This avoids restore failure on extension-owned system schemas (for example Timescale internal schemas).
+- Backend host must provide `pg_dump` and `pg_restore` binaries in `PATH`.
 
 ## Tests
 
