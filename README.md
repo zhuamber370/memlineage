@@ -16,6 +16,7 @@ Quick links:
 - Manage skills in UI: <http://127.0.0.1:3000/skills>
 - Agent integration guide: [INTEGRATION.md](INTEGRATION.md)
 - Integrate with Codex: [Codex Integration](#codex-integration)
+- Prompt examples: [How to Talk to Your Agent](#how-to-talk-to-your-agent-skill-examples)
 - Runtime/API contract: [docs/guides/agent-api-surface.md](docs/guides/agent-api-surface.md)
 - Production controls: [Safe-to-Write Checklist](docs/guides/safe-to-write-checklist.md)
 - Operator feedback thread: [GitHub Discussion #20](https://github.com/zhuamber370/memlineage/discussions/20)
@@ -245,6 +246,60 @@ bash scripts/uninstall_codex_memlineage_skill.sh
 ```
 
 After install, start a new Codex session to load the updated skill list.
+
+## How to Talk to Your Agent (Skill Examples)
+
+These examples work for both OpenClaw and Codex after the MemLineage skill is enabled.
+You can use natural language; you do not need to mention API endpoints.
+
+Read-only examples (no writes):
+
+```text
+Which todos should I prioritize today? Include blocked tasks and due dates.
+```
+
+```text
+Which node is task "Release v0.1.2" currently on? Show current node, previous step, and next dependency.
+```
+
+```text
+Find notes related to onboarding from the last 14 days and summarize the top 3 updates.
+```
+
+Write examples (proposal-first):
+
+```text
+Record todo:
+Title=Prepare v0.1.3 changelog
+Description=Draft release notes and collect screenshots
+Priority=P1
+Due=2026-03-08
+```
+
+```text
+Create knowledge:
+Title=Safe-to-write policy
+Body=All agent writes must go through dry-run and human approval.
+Category=decision_record
+```
+
+Review/confirm/rollback examples:
+
+```text
+Show the latest proposal diff.
+Commit proposal change_set_id=<id>
+```
+
+```text
+Reject proposal change_set_id=<id> reason=Need clearer title and tags.
+Undo last commit reason=Wrong task target.
+```
+
+Safe pattern (recommended):
+
+```text
+Propose only first. Do not commit any change until I explicitly confirm.
+```
 
 Integration references:
 - Agent integration guide: [INTEGRATION.md](INTEGRATION.md)
