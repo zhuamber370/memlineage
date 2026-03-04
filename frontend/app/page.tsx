@@ -123,6 +123,14 @@ export default function HomeDashboardPage() {
     return String(error ?? "");
   }
 
+  function dbSafetyErrorLabel(raw: string): string {
+    if (raw.includes("DB_BACKUP_TOOL_NOT_FOUND")) return t("home.dbSafety.error.toolMissing");
+    if (raw.includes("DB_BACKUP_INVALID")) return t("home.dbSafety.error.invalid");
+    if (raw.includes("DB_BACKUP_BACKEND_MISMATCH")) return t("home.dbSafety.error.backendMismatch");
+    if (raw.includes("DB_BACKUP_COMMAND_FAILED")) return t("home.dbSafety.error.commandFailed");
+    return raw;
+  }
+
   async function loadHomeData() {
     setTasksLoading(true);
     setKnowledgeLoading(true);
@@ -191,7 +199,7 @@ export default function HomeDashboardPage() {
       triggerFileDownload(blob, filename);
       setBackupNotice(`${t("home.dbSafety.backup.success")} ${filename} (${formatFileSize(blob.size)})`);
     } catch (error) {
-      setBackupError(messageFromError(error));
+      setBackupError(dbSafetyErrorLabel(messageFromError(error)));
     } finally {
       setBackupPending(false);
     }
@@ -219,7 +227,7 @@ export default function HomeDashboardPage() {
       setRestoreAck(false);
       setRestorePickerKey((prev) => prev + 1);
     } catch (error) {
-      setRestoreError(messageFromError(error));
+      setRestoreError(dbSafetyErrorLabel(messageFromError(error)));
     } finally {
       setRestorePending(false);
     }

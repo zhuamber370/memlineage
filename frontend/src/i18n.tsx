@@ -71,6 +71,10 @@ const dictionaries: Record<Lang, Dictionary> = {
     "home.dbSafety.restore.success": "Restore completed.",
     "home.dbSafety.restore.failed": "Restore failed",
     "home.dbSafety.restore.hint": "Please refresh task/knowledge/changes pages.",
+    "home.dbSafety.error.toolMissing": "PostgreSQL backup tools are missing on backend host (pg_dump/pg_restore).",
+    "home.dbSafety.error.invalid": "Invalid backup file.",
+    "home.dbSafety.error.backendMismatch": "Backup backend does not match current runtime.",
+    "home.dbSafety.error.commandFailed": "Backup/restore command failed on backend host.",
 
     "tasks.title": "Tasks",
     "tasks.subtitle": "Agent task desk: filter by priority/status/category and review details.",
@@ -577,6 +581,10 @@ const dictionaries: Record<Lang, Dictionary> = {
     "home.dbSafety.restore.success": "恢复完成。",
     "home.dbSafety.restore.failed": "恢复失败",
     "home.dbSafety.restore.hint": "建议刷新任务/知识/变更页面。",
+    "home.dbSafety.error.toolMissing": "后端主机缺少 PostgreSQL 备份工具（pg_dump/pg_restore）。",
+    "home.dbSafety.error.invalid": "备份文件无效。",
+    "home.dbSafety.error.backendMismatch": "备份文件类型与当前运行数据库不匹配。",
+    "home.dbSafety.error.commandFailed": "后端备份/恢复命令执行失败。",
 
     "tasks.title": "任务",
     "tasks.subtitle": "Agent 任务台：按优先级/状态/分类筛选并审阅详情。",
