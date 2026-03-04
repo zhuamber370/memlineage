@@ -250,55 +250,65 @@ After install, start a new Codex session to load the updated skill list.
 ## How to Talk to Your Agent (Skill Examples)
 
 These examples work for both OpenClaw and Codex after the MemLineage skill is enabled.
-You can use natural language; you do not need to mention API endpoints.
+You can use natural language; you do not need to mention API endpoints or action names.
 
-Read-only examples (no writes):
+These prompts are phrased to match the skill routing domains in `skills/memlineage/SKILL.md`
+(`tasks`, `journals`, `notes`, `knowledge`, `routes/DAG`, `changes`, `audit`).
+
+Read intent examples (no write):
 
 ```text
-Which todos should I prioritize today? Include blocked tasks and due dates.
+What should I prioritize today? Show my top tasks with blocked status, due dates, and quick rationale.
 ```
 
 ```text
-Which node is task "Release v0.1.2" currently on? Show current node, previous step, and next dependency.
+For task "Release v0.1.2", where am I in the DAG right now? Show current node, previous step, and next dependency.
 ```
 
 ```text
-Find notes related to onboarding from the last 14 days and summarize the top 3 updates.
-```
-
-Write examples (proposal-first):
-
-```text
-Record todo:
-Title=Prepare v0.1.3 changelog
-Description=Draft release notes and collect screenshots
-Priority=P1
-Due=2026-03-08
+Show recent knowledge and note updates for onboarding and release topics from the last 7 days.
 ```
 
 ```text
-Create knowledge:
-Title=Safe-to-write policy
-Body=All agent writes must go through dry-run and human approval.
-Category=decision_record
+Who changed task statuses in the last 24 hours? Give me a short audit timeline by actor and action.
 ```
 
-Review/confirm/rollback examples:
+Explicit write intent examples (proposal first):
 
 ```text
-Show the latest proposal diff.
-Commit proposal change_set_id=<id>
+Please create a todo proposal for me: "Prepare v0.1.3 changelog", priority P1, due this week. Do not commit yet.
 ```
 
 ```text
-Reject proposal change_set_id=<id> reason=Need clearer title and tags.
-Undo last commit reason=Wrong task target.
+Append a journal entry proposal for today: "Finished dashboard polish and verified release notes." Keep it as proposal only.
 ```
 
-Safe pattern (recommended):
+```text
+Create a knowledge proposal titled "Safe-to-write policy" under decision_record, saying all agent writes require dry-run and human approval.
+```
+
+Review / commit / reject / undo examples:
 
 ```text
-Propose only first. Do not commit any change until I explicitly confirm.
+Show me the latest proposed change and summarize its impact before I decide.
+```
+
+```text
+Commit proposal change_set_id=<id>. I approve this change.
+```
+
+```text
+Reject proposal change_set_id=<id> because the title and tags are still unclear.
+```
+
+```text
+Undo the last commit. Reason: wrong task target.
+```
+
+Safety instruction you can keep as a standing rule:
+
+```text
+For any write request, always create a proposal first and wait for my explicit "commit" confirmation.
 ```
 
 Integration references:
