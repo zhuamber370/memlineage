@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 
-import { apiGet } from "../src/lib/api";
+import { apiGet, downloadDbBackup, restoreDbBackup } from "../src/lib/api";
 import { formatDate, formatDateTime } from "../src/lib/datetime";
 import {
   buildHomeSnapshot,
@@ -17,6 +17,12 @@ type TaskListResp = { items: TaskSummary[] };
 type KnowledgeListResp = { items: KnowledgeSummary[] };
 type ChangeListResp = { items: ChangeSummary[] };
 type ChartDatum = { label: string; value: number };
+
+function formatFileSize(size: number): string {
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  return `${(size / (1024 * 1024)).toFixed(2)} MB`;
+}
 
 function HomeBarChart({
   title,
@@ -61,6 +67,15 @@ export default function HomeDashboardPage() {
   const [changesLoading, setChangesLoading] = useState(false);
   const [tasksError, setTasksError] = useState("");
   const [knowledgeError, setKnowledgeError] = useState("");
+  const [backupPending, setBackupPending] = useState(false);
+  const [backupNotice, setBackupNotice] = useState("");
+  const [backupError, setBackupError] = useState("");
+  const [restoreFile, setRestoreFile] = useState<File | null>(null);
+  const [restoreAck, setRestoreAck] = useState(false);
+  const [restorePending, setRestorePending] = useState(false);
+  const [restoreNotice, setRestoreNotice] = useState("");
+  const [restoreError, setRestoreError] = useState("");
+  const [restorePickerKey, setRestorePickerKey] = useState(0);
 
   const snapshot = useMemo(() => buildHomeSnapshot({ tasks, knowledge, changes }), [tasks, knowledge, changes]);
   const categoryEntries = useMemo(
@@ -156,6 +171,58 @@ export default function HomeDashboardPage() {
     const key = `knowledge.category.${category}`;
     const value = t(key);
     return value === key ? category : value;
+  }
+
+  function triggerFileDownload(blob: Blob, filename: string) {
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = objectUrl;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(objectUrl);
+  }
+
+  async function onBackupDownload() {
+    setBackupPending(true);
+    setBackupNotice("");
+    setBackupError("");
+    try {
+      const { blob, filename } = await downloadDbBackup();
+      triggerFileDownload(blob, filename);
+      setBackupNotice(`${t("home.dbSafety.backup.success")} ${filename} (${formatFileSize(blob.size)})`);
+    } catch (error) {
+      setBackupError(messageFromError(error));
+    } finally {
+      setBackupPending(false);
+    }
+  }
+
+  function onRestoreFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const selected = event.target.files?.[0] ?? null;
+    setRestoreFile(selected);
+    setRestoreNotice("");
+    setRestoreError("");
+  }
+
+  async function onRestoreSubmit() {
+    if (!restoreFile || !restoreAck || restorePending) return;
+    const confirmed = window.confirm(t("home.dbSafety.restore.confirm"));
+    if (!confirmed) return;
+
+    setRestorePending(true);
+    setRestoreNotice("");
+    setRestoreError("");
+    try {
+      await restoreDbBackup(restoreFile);
+      setRestoreNotice(`${t("home.dbSafety.restore.success")} ${t("home.dbSafety.restore.hint")}`);
+      setRestoreFile(null);
+      setRestoreAck(false);
+      setRestorePickerKey((prev) => prev + 1);
+    } catch (error) {
+      setRestoreError(messageFromError(error));
+    } finally {
+      setRestorePending(false);
+    }
   }
 
   function taskStudioLink(task: TaskSummary): string {
@@ -302,6 +369,66 @@ export default function HomeDashboardPage() {
             <Link href="/knowledge?status=active" className="badge">
               {t("home.knowledge.openKnowledge")}
             </Link>
+          </div>
+        </section>
+
+        <section className="card homePanel homePanelWide homeDbSafety">
+          <h2 className="changesSubTitle">{t("home.dbSafety.title")}</h2>
+          <p className="meta">{t("home.dbSafety.subtitle")}</p>
+
+          <div className="homeDbSafetyGrid">
+            <article className="homeDbBlock">
+              <h3 className="changesGroupTitle">{t("home.dbSafety.backup.title")}</h3>
+              <button className="badge" onClick={() => void onBackupDownload()} disabled={backupPending}>
+                {backupPending ? t("home.dbSafety.backup.running") : t("home.dbSafety.backup.action")}
+              </button>
+              {backupNotice ? <p className="meta" style={{ color: "var(--success)" }}>{backupNotice}</p> : null}
+              {backupError ? (
+                <p className="meta" style={{ color: "var(--danger)" }}>
+                  {t("home.dbSafety.backup.failed")}: {backupError}
+                </p>
+              ) : null}
+            </article>
+
+            <article className="homeDbBlock">
+              <h3 className="changesGroupTitle">{t("home.dbSafety.restore.title")}</h3>
+              <input
+                key={restorePickerKey}
+                className="homeDbFileInput"
+                type="file"
+                accept=".mlbk,.zip,application/octet-stream"
+                onChange={onRestoreFileChange}
+                disabled={restorePending}
+              />
+              {restoreFile ? (
+                <p className="homeDbFileMeta">
+                  {t("home.dbSafety.restore.selectedFile")}: {restoreFile.name} ({formatFileSize(restoreFile.size)})
+                </p>
+              ) : null}
+              <label className="homeDbCheck">
+                <input
+                  type="checkbox"
+                  checked={restoreAck}
+                  onChange={(event) => setRestoreAck(event.target.checked)}
+                  disabled={restorePending}
+                />
+                <span>{t("home.dbSafety.restore.ack")}</span>
+              </label>
+              <p className="homeDbWarn">{t("home.dbSafety.restore.warn")}</p>
+              <button
+                className="badge homeDbDangerButton"
+                onClick={() => void onRestoreSubmit()}
+                disabled={!restoreFile || !restoreAck || restorePending}
+              >
+                {restorePending ? t("home.dbSafety.restore.running") : t("home.dbSafety.restore.action")}
+              </button>
+              {restoreNotice ? <p className="meta" style={{ color: "var(--success)" }}>{restoreNotice}</p> : null}
+              {restoreError ? (
+                <p className="meta" style={{ color: "var(--danger)" }}>
+                  {t("home.dbSafety.restore.failed")}: {restoreError}
+                </p>
+              ) : null}
+            </article>
           </div>
         </section>
       </div>

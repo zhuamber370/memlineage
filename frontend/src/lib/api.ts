@@ -92,6 +92,51 @@ export async function apiDeleteJson<T>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+function authOnlyHeaders(): HeadersInit {
+  if (!API_KEY) return {};
+  return { Authorization: `Bearer ${API_KEY}` };
+}
+
+export type DbRestoreResult = {
+  status: "restored";
+  backend: "sqlite" | "postgres";
+  restored_at: string;
+};
+
+export async function downloadDbBackup(): Promise<{ blob: Blob; filename: string }> {
+  const res = await fetch(`${API_BASE}/api/v1/admin/db/backup`, {
+    method: "GET",
+    headers: authOnlyHeaders(),
+    cache: "no-store"
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`GET /api/v1/admin/db/backup failed: ${res.status} ${text}`);
+  }
+  const disposition = res.headers.get("content-disposition") ?? "";
+  const match = disposition.match(/filename=(?:\"([^\"]+)\"|([^;]+))/i);
+  const filename = (match?.[1] ?? match?.[2] ?? "memlineage-backup.mlbk").trim();
+  return { blob: await res.blob(), filename };
+}
+
+export async function restoreDbBackup(file: File): Promise<DbRestoreResult> {
+  const res = await fetch(`${API_BASE}/api/v1/admin/db/restore`, {
+    method: "POST",
+    headers: {
+      ...authOnlyHeaders(),
+      "Content-Type": "application/octet-stream",
+      "x-backup-filename": file.name
+    },
+    body: file,
+    cache: "no-store"
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`POST /api/v1/admin/db/restore failed: ${res.status} ${text}`);
+  }
+  return res.json() as Promise<DbRestoreResult>;
+}
+
 export type SkillAgent = "openclaw" | "codex";
 
 export type SkillStatus = {

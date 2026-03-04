@@ -298,6 +298,62 @@ a {
   margin-top: 0;
 }
 
+.homeDbSafety {
+  gap: 12px;
+}
+
+.homeDbSafetyGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.homeDbBlock {
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.homeDbFileInput {
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  background: #fffdf8;
+  padding: 8px 10px;
+  font-size: 0.86rem;
+}
+
+.homeDbFileMeta {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  word-break: break-all;
+}
+
+.homeDbCheck {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  align-items: start;
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+}
+
+.homeDbWarn {
+  margin: 0;
+  color: #8a1414;
+  font-size: 0.86rem;
+}
+
+.homeDbDangerButton {
+  border-color: #8a1414;
+  color: #8a1414;
+  background: #fff2ef;
+}
+
 .h1 {
   margin: 0 0 10px;
   font-size: clamp(1.4rem, 2.2vw, 2rem);
@@ -2405,6 +2461,10 @@ a {
   }
 
   .homeChartGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .homeDbSafetyGrid {
     grid-template-columns: 1fr;
   }
 
