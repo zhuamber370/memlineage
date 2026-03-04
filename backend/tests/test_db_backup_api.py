@@ -4,7 +4,9 @@ import zipfile
 from pathlib import Path
 
 import pytest
+from sqlalchemy import create_engine
 
+from src.services.db_backup_service import DbBackupService
 from tests.helpers import create_test_task, make_client
 
 
@@ -29,6 +31,17 @@ def _download_backup(client) -> bytes:
     assert "attachment;" in disposition
     assert ".mlbk" in disposition
     return resp.content
+
+
+class _FakeSession:
+    def __init__(self, engine):
+        self._engine = engine
+
+    def get_bind(self):
+        return self._engine
+
+    def close(self):
+        return None
 
 
 def test_backup_download_contains_manifest_and_payload_sqlite(isolated_db_env):
@@ -89,3 +102,83 @@ def test_restore_rejects_invalid_backup_blob(isolated_db_env):
     )
     assert resp.status_code == 422, resp.text
     assert resp.json()["error"]["code"] == "DB_BACKUP_INVALID"
+
+
+def test_postgres_backup_uses_pg_dump(monkeypatch: pytest.MonkeyPatch):
+    engine = create_engine("postgresql+psycopg://afkms:secret@127.0.0.1:5432/afkms", future=True)
+    service = DbBackupService(_FakeSession(engine))
+    seen: dict[str, object] = {}
+
+    class _RunResult:
+        returncode = 0
+        stdout = ""
+        stderr = ""
+
+    def _fake_run(cmd, env=None, capture_output=False, text=False, check=False):
+        seen["cmd"] = [str(part) for part in cmd]
+        seen["env"] = dict(env or {})
+        cmd_items = [str(part) for part in cmd]
+        file_index = cmd_items.index("--file")
+        Path(cmd_items[file_index + 1]).write_bytes(b"pg-dump-bytes")
+        return _RunResult()
+
+    monkeypatch.setattr("src.services.db_backup_service.subprocess.run", _fake_run)
+
+    filename, package_blob, backend = service.create_backup()
+    assert filename.endswith(".mlbk")
+    assert backend == "postgres"
+    assert seen["cmd"][0] == "pg_dump"
+    assert "--format=custom" in seen["cmd"]
+    assert "--dbname" in seen["cmd"]
+    assert seen["env"]["PGPASSWORD"] == "secret"
+
+    archive = zipfile.ZipFile(io.BytesIO(package_blob))
+    manifest = json.loads(archive.read("manifest.json").decode("utf-8"))
+    assert manifest["backend"] == "postgres"
+    assert archive.read("payload.pgdump") == b"pg-dump-bytes"
+
+
+def test_postgres_restore_uses_pg_restore(monkeypatch: pytest.MonkeyPatch):
+    engine = create_engine("postgresql+psycopg://afkms:secret@127.0.0.1:5432/afkms", future=True)
+    service = DbBackupService(_FakeSession(engine))
+    seen: dict[str, object] = {}
+
+    class _RunResult:
+        returncode = 0
+        stdout = ""
+        stderr = ""
+
+    backup_blob_io = io.BytesIO()
+    with zipfile.ZipFile(backup_blob_io, mode="w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr(
+            "manifest.json",
+            json.dumps(
+                {
+                    "format": "memlineage-db-backup",
+                    "version": 1,
+                    "backend": "postgres",
+                    "created_at": "2026-03-04T00:00:00Z",
+                    "payload": "payload.pgdump",
+                }
+            ),
+        )
+        archive.writestr("payload.pgdump", b"restore-target-payload")
+
+    def _fake_run(cmd, env=None, capture_output=False, text=False, check=False):
+        cmd_items = [str(part) for part in cmd]
+        seen["cmd"] = cmd_items
+        seen["env"] = dict(env or {})
+        seen["payload"] = Path(cmd_items[-1]).read_bytes()
+        return _RunResult()
+
+    monkeypatch.setattr("src.services.db_backup_service.subprocess.run", _fake_run)
+
+    restored = service.restore_backup(backup_blob_io.getvalue(), backup_filename="restore.mlbk")
+    assert restored["status"] == "restored"
+    assert restored["backend"] == "postgres"
+    assert seen["cmd"][0] == "pg_restore"
+    assert "--clean" in seen["cmd"]
+    assert "--if-exists" in seen["cmd"]
+    assert "--dbname" in seen["cmd"]
+    assert seen["env"]["PGPASSWORD"] == "secret"
+    assert seen["payload"] == b"restore-target-payload"
