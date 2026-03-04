@@ -18,6 +18,7 @@ SkillDetectStatus = Literal["unknown", "ready", "failed"]
 SkillRuntimeStatus = Literal["unknown", "installed", "not_installed"]
 SkillInstallStatus = Literal["unknown", "installed", "not_installed"]
 SkillPathMode = Literal["none", "auto", "manual"]
+DbBackend = Literal["sqlite", "postgres"]
 
 
 class SkillStatusOut(BaseModel):
@@ -86,6 +87,14 @@ class SkillOperationOut(BaseModel):
 
     action: str
     status: SkillStatusOut
+
+
+class DbRestoreOut(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    status: Literal["restored"]
+    backend: DbBackend
+    restored_at: datetime
 
 
 class TaskCreate(BaseModel):
