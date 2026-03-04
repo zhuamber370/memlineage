@@ -62,6 +62,30 @@ a {
   background: #fff8ef;
 }
 
+.navLinkInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.navLinkAlert {
+  border-color: #8a1414;
+  background: #fff2ef;
+}
+
+.navLinkCount {
+  min-width: 22px;
+  text-align: center;
+  border: 2px solid #8a1414;
+  border-radius: 999px;
+  padding: 0 6px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #8a1414;
+  background: #ffe5e0;
+}
+
 .navLink:hover,
 .navLink:focus-visible {
   outline: none;
@@ -96,21 +120,28 @@ a {
 
 .homeDashboardLayout {
   display: grid;
-  grid-template-columns: minmax(640px, 1.35fr) minmax(320px, 0.9fr);
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 12px;
   align-items: start;
-}
-
-.homeMainColumn,
-.homeSideColumn {
-  display: grid;
-  gap: 12px;
-  align-content: start;
 }
 
 .homePanel {
   display: grid;
   gap: 10px;
+}
+
+.homePanelWide {
+  grid-column: 1 / -1;
+}
+
+.homePanelTask {
+  grid-column: 1 / span 8;
+}
+
+.homePanelKnowledge {
+  grid-column: 9 / -1;
+  position: sticky;
+  top: 8px;
 }
 
 .homeMetricRail {
@@ -198,9 +229,9 @@ a {
 }
 
 .homeFocusList {
-  max-height: 460px;
+  max-height: 520px;
   overflow: auto;
-  padding-right: 2px;
+  padding-right: 4px;
 }
 
 .homeFocusItem {
@@ -232,6 +263,21 @@ a {
 
   .homeDateCompact {
     display: inline;
+  }
+}
+
+@media (max-width: 1200px) {
+  .homePanelTask {
+    grid-column: 1 / span 7;
+  }
+
+  .homePanelKnowledge {
+    grid-column: 8 / -1;
+    position: static;
+  }
+
+  .homeFocusList {
+    max-height: 460px;
   }
 }
 
@@ -2346,6 +2392,16 @@ a {
 
   .homeDashboardLayout {
     grid-template-columns: 1fr;
+  }
+
+  .homePanelWide,
+  .homePanelTask,
+  .homePanelKnowledge {
+    grid-column: 1 / -1;
+  }
+
+  .homePanelKnowledge {
+    position: static;
   }
 
   .homeChartGrid {

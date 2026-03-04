@@ -49,6 +49,19 @@
   - `cd frontend && npm run build` (PASS)
   - Playwright deep-link and list-click regression: switching between different `task_id` consistently opens the correct task detail (PASS)
 
+## 2026-03-04 Home + Changes UX Sync
+- Home dashboard layout was rebalanced:
+  - Global snapshot expanded as a full-width top panel
+  - Task board and Knowledge board aligned into a denser two-column working area
+- Removed the home `Changes Board` section to reduce duplication and visual scatter.
+- Added left-sidebar `Changes` reminder badge with pending `proposed` count.
+- Fixed stale sidebar reminder updates by introducing event-driven refresh from `/changes` actions:
+  - `commit/reject/undo/refresh` now dispatch a refresh signal
+  - sidebar count updates immediately instead of waiting for polling interval
+- Validation:
+  - `cd frontend && npm run build` (PASS)
+  - manual/Playwright interaction check: count changes instantly after commit/reject (PASS)
+
 ## Commit History
 - `6597d5f` feat(frontend): scaffold home dashboard route and nav entry
 - `5fedd5f` feat(frontend): add home dashboard aggregation and focus ranking helpers

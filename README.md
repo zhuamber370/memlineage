@@ -39,7 +39,8 @@ Quick links:
 ## Latest Release (v0.1.2)
 
 - Release page: [MemLineage v0.1.2](https://github.com/zhuamber370/memlineage/releases/tag/v0.1.2)
-- Home Dashboard (`/`) now provides a global snapshot and `Task / Changes / Knowledge` boards.
+- Home Dashboard (`/`) now provides a global snapshot with focused `Task / Knowledge` boards.
+- Changes reminders moved to the left sidebar `Changes` nav badge (with pending count) instead of a dedicated home-board panel.
 - Dashboard cards and focus actions support query-driven deep links into `/tasks`, `/changes`, and `/knowledge`.
 - Post-release stabilization fixed `Open Studio` task selection race and stale DAG/log replay under rapid task switching.
 - Dashboard polish improved chart readability and focus-board scanning for daily operation.
@@ -56,6 +57,8 @@ Supporting release docs:
   - enable / disable
   - update / health check
 - Added backend Skill Management API surface under `/api/v1/skills/*` for status, detect, path config, install, enable, update, and health.
+- Updated Home dashboard layout by removing duplicated `Changes Board` and tightening task/knowledge panel density.
+- Added left-sidebar `Changes` pending badge reminder and fixed immediate count refresh after commit/reject/undo.
 
 ## Evaluation Flow (after stack is running)
 

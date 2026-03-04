@@ -61,7 +61,6 @@ export default function HomeDashboardPage() {
   const [changesLoading, setChangesLoading] = useState(false);
   const [tasksError, setTasksError] = useState("");
   const [knowledgeError, setKnowledgeError] = useState("");
-  const [changesError, setChangesError] = useState("");
 
   const snapshot = useMemo(() => buildHomeSnapshot({ tasks, knowledge, changes }), [tasks, knowledge, changes]);
   const categoryEntries = useMemo(
@@ -115,7 +114,6 @@ export default function HomeDashboardPage() {
     setChangesLoading(true);
     setTasksError("");
     setKnowledgeError("");
-    setChangesError("");
 
     const [taskRes, knowledgeRes, changeRes] = await Promise.allSettled([
       apiGet<TaskListResp>("/api/v1/tasks?page=1&page_size=100"),
@@ -143,7 +141,6 @@ export default function HomeDashboardPage() {
       setChanges(changeRes.value.items ?? []);
     } else {
       setChanges([]);
-      setChangesError(messageFromError(changeRes.reason));
     }
     setChangesLoading(false);
   }
@@ -159,13 +156,6 @@ export default function HomeDashboardPage() {
     const key = `knowledge.category.${category}`;
     const value = t(key);
     return value === key ? category : value;
-  }
-
-  function changeStatusLabel(status: string): string {
-    if (status === "proposed") return t("home.changes.status.proposed");
-    if (status === "committed") return t("home.changes.status.committed");
-    if (status === "rejected") return t("home.changes.status.rejected");
-    return status;
   }
 
   function taskStudioLink(task: TaskSummary): string {
@@ -189,8 +179,7 @@ export default function HomeDashboardPage() {
       </header>
 
       <div className="homeDashboardLayout">
-        <div className="homeMainColumn">
-        <section className="card homePanel">
+        <section className="card homePanel homePanelWide">
           <h2 className="changesSubTitle">{t("home.global.title")}</h2>
           <div className="homeMetricRail">
             <Link href="/tasks" className="homeMetricCard">
@@ -228,7 +217,7 @@ export default function HomeDashboardPage() {
           </div>
         </section>
 
-        <section className="card homePanel">
+        <section className="card homePanel homePanelTask">
           <h2 className="changesSubTitle">{t("home.tasks.title")}</h2>
           <div className="changesSummaryGrid">
             <div className="changesSummaryCard">
@@ -275,51 +264,8 @@ export default function HomeDashboardPage() {
             )}
           </div>
         </section>
-        </div>
 
-        <aside className="homeSideColumn">
-        <section className="card homePanel">
-          <h2 className="changesSubTitle">{t("home.changes.title")}</h2>
-          <div className="changesSummaryGrid">
-            <div className="changesSummaryCard">
-              <div className="changesSummaryKey">{t("home.changes.proposedCount")}</div>
-              <div className="changesSummaryValue">{snapshot.global.proposedChanges}</div>
-            </div>
-            <div className="changesSummaryCard">
-              <div className="changesSummaryKey">{t("home.changes.latestCommittedAt")}</div>
-              <div className="changesSummaryValue">{formatDateTime(snapshot.changes.latestCommittedAt, lang)}</div>
-            </div>
-          </div>
-          <h3 className="changesGroupTitle">{t("home.changes.recentTitle")}</h3>
-          <div className="homeList">
-            {changesLoading ? (
-              <p className="meta">{t("home.loading")}</p>
-            ) : changesError ? (
-              <p className="meta" style={{ color: "var(--danger)" }}>
-                {t("home.error")}: {changesError}
-              </p>
-            ) : snapshot.changes.recentProposed.length ? (
-              snapshot.changes.recentProposed.map((item) => (
-                <article key={item.change_set_id} className="homeListItem">
-                  <div className="taskTitle">{item.change_set_id}</div>
-                  <div className="taskMetaLine">
-                    <span>{t("changes.proposalCreatedAt")}: {formatDateTime(item.created_at, lang)}</span>
-                    <span>{changeStatusLabel(item.status)}</span>
-                  </div>
-                  <div className="badges">
-                    <Link href="/changes?status=proposed" className="badge">
-                      {t("home.changes.openChanges")}
-                    </Link>
-                  </div>
-                </article>
-              ))
-            ) : (
-              <p className="meta">{t("home.empty")}</p>
-            )}
-          </div>
-        </section>
-
-        <section className="card homePanel">
+        <section className="card homePanel homePanelKnowledge">
           <h2 className="changesSubTitle">{t("home.knowledge.title")}</h2>
           <div className="changesSummaryGrid">
             <div className="changesSummaryCard">
@@ -358,7 +304,6 @@ export default function HomeDashboardPage() {
             </Link>
           </div>
         </section>
-        </aside>
       </div>
     </section>
   );

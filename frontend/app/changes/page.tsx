@@ -6,6 +6,8 @@ import { apiDelete, apiGet, apiPost } from "../../src/lib/api";
 import { formatDateTime } from "../../src/lib/datetime";
 import { useI18n } from "../../src/i18n";
 
+const PROPOSED_CHANGES_REFRESH_EVENT = "memlineage:proposed-changes-refresh";
+
 type ChangeListItem = {
   change_set_id: string;
   status: string;
@@ -151,6 +153,11 @@ export default function ChangesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
 
+  function notifyProposedChangesUpdated() {
+    if (typeof window === "undefined") return;
+    window.dispatchEvent(new Event(PROPOSED_CHANGES_REFRESH_EVENT));
+  }
+
   async function loadInbox() {
     setError("");
     setNotice("");
@@ -165,6 +172,7 @@ export default function ChangesPage() {
       setCommitResult(null);
       setUndoResult(null);
       setAppliedEvents([]);
+      notifyProposedChangesUpdated();
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -199,6 +207,7 @@ export default function ChangesPage() {
         approved_by: { type: "user", id: "usr_local" },
         client_request_id: reqId
       });
+      notifyProposedChangesUpdated();
       setCommitResult(res);
       setNotice(t("changes.noticeCommitted"));
       await loadCommitAppliedEvents(res.commit_id);
@@ -220,6 +229,7 @@ export default function ChangesPage() {
         reason: "rollback from changes UI",
         client_request_id: `ui-undo-${Date.now()}`
       });
+      notifyProposedChangesUpdated();
       setUndoResult(res);
       setNotice(t("changes.noticeUndone"));
       await loadInbox();
@@ -240,6 +250,7 @@ export default function ChangesPage() {
     setPending("reject");
     try {
       await apiDelete(`/api/v1/changes/${selectedId}`);
+      notifyProposedChangesUpdated();
       setNotice(t("changes.noticeRejected"));
       setCommitResult(null);
       setUndoResult(null);

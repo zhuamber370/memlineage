@@ -1,7 +1,7 @@
 > Documentation Status: Current
-> Last synced: 2026-03-02
+> Last synced: 2026-03-04
 
-# MVP Release Notes (Synced 2026-03-02)
+# MVP Release Notes (Synced 2026-03-04)
 
 ## Delivered
 - Backend APIs for `topics/tasks/notes/knowledge/journals/inbox/links/ideas/routes/changes/context/audit`
@@ -26,11 +26,13 @@
     - edge relation selection/edge inspector entry removed
     - edge line keeps pure connection display only
 - Home Dashboard (`/`) for personal overview:
-  - global snapshot + `Task / Changes / Knowledge` three-board layout
+  - global snapshot + `Task / Knowledge` board layout
+  - pending change proposals are surfaced as a left-sidebar `Changes` badge reminder
   - focus task ranking rule: `P0 + in_progress` first, then due date, then latest update, then title tie-break
   - dashboard cards deep-link to target pages with query-based filter hydration
   - per-board loading/error/empty isolation to avoid single-source failure taking down the whole page
   - post-release stabilization (2026-03-02): fixed `Open Studio` task selection race and stale DAG data replay under rapid task switching/deep-link navigation
+  - post-release UX sync (2026-03-04): removed duplicated home changes panel and fixed immediate sidebar count refresh after commit/reject/undo
 - Knowledge workspace using `/api/v1/knowledge`:
   - category model: `ops_manual | mechanism_spec | decision_record`
   - status model: `active | archived`
