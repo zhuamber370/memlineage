@@ -4,18 +4,13 @@
 [![Open Issues](https://img.shields.io/github/issues/zhuamber370/memlineage)](https://github.com/zhuamber370/memlineage/issues)
 [![Last Commit](https://img.shields.io/github/last-commit/zhuamber370/memlineage)](https://github.com/zhuamber370/memlineage/commits/main)
 
-MemLineage is an **open-source work control layer** for humans who run meaningful work through agents.
+MemLineage is an **open-source work control layer** for humans who use agents to get real work done.
 It works with OpenClaw, Codex, and custom agent runtimes.
 
-It keeps five kinds of state visible in one place:
-- goals
-- tasks and next steps
-- durable knowledge
-- governed writes and review state
-- local runtime skill state
+When work starts to span Codex, OpenClaw, or custom agent workflows, conversation alone stops being enough.
+MemLineage gives the human operator one place to keep goals, tasks, durable knowledge, governed writes, and runtime state visible.
 
-MemLineage is for the human operator. It is not another chat window, and it is not an agent-side task planner.
-It adds a PR-like control loop in front of agent writes:
+Risky writes go through a PR-like control loop:
 **dry-run -> diff preview -> human approve/reject -> commit -> audit (+ undo)**.
 
 Quick links:
@@ -30,41 +25,48 @@ Quick links:
 - Production controls: [Safe-to-Write Checklist](docs/guides/safe-to-write-checklist.md)
 - Operator feedback thread: [GitHub Discussion #20](https://github.com/zhuamber370/memlineage/discussions/20)
 
-## If This Feels Familiar
+## Why MemLineage
 
-- The agents are productive, but I am losing track of the overall state.
-- Important goals, tasks, and next steps keep disappearing into chat history.
-- I want risky writes to be reviewable and reversible before they land.
-- I need a clearer control surface than raw conversation logs.
-- I want local Codex / OpenClaw skill setup and health to be visible in one place.
+Agent-heavy workflows often break in familiar ways:
 
-## What You Get Today
+- goals and next steps disappear into chat history
+- reusable knowledge and day-to-day execution drift apart
+- risky writes change memory or docs without a clear review loop
+- local runtime setup becomes harder to inspect once skills and installs drift
 
-- **Home control surface**: `/` aggregates task focus, recent knowledge, pending changes, and local database safety actions
-- **Operational workspace**: `/tasks` + `/knowledge` keep day-to-day execution outside raw chat history
-- **Human review inbox**: `/changes` handles dry-run diff preview, commit / reject, undo-last, and audit-backed change review
-- **Runtime skill operations**: `/skills` manages detect / install / enable / disable / update / health for OpenClaw and Codex
-- **Self-hostable core**: FastAPI backend + Next.js frontend with SQLite or PostgreSQL backing storage
+MemLineage is built to give the human operator a stable control surface outside raw conversation logs.
 
-## What MemLineage Is Not
+## What You Can Do Today
 
-- Not a generic note-taking or personal knowledge app
-- Not a hidden agent planner where tasks exist only for the model
-- Not a fully autonomous write pipeline with no human review gate
-- Not a SaaS product with multi-tenant billing / OAuth today
+- **See the overall state on `/`**: focus tasks, recent knowledge, pending changes, and local database safety actions
+- **Run day-to-day work on `/tasks` and `/knowledge`**: keep execution and durable context outside raw chat history
+- **Review risky writes on `/changes`**: use dry-run, diff preview, commit / reject, undo-last, and audit-backed history
+- **Manage local runtime integrations on `/skills`**: detect, install, enable, disable, update, and check health for OpenClaw and Codex
+- **Self-host locally**: run the FastAPI backend and Next.js frontend with SQLite or PostgreSQL
 
-## Who It Is For
+## UI Preview
+
+> Screenshots use synthetic test data.
+
+![Home dashboard (synthetic test data)](docs/assets/screenshots/home-dashboard.png)
+
+![Changes UI: dry-run diff preview](docs/assets/screenshots/changes-ui-dryrun.png)
+
+![Tasks dashboard (synthetic test data)](docs/assets/screenshots/tasks-dashboard.png)
+
+## Who It Helps
 
 - Solo builders and developer-operators using OpenClaw, Codex, or custom agents as part of daily work
-- People who need one place to track goals, tasks, durable knowledge, runtime state, and reviewable changes
+- People who want one place to track goals, tasks, durable knowledge, runtime state, and reviewable changes
 - Workflows that require human approval, audit trail, and rollback for risky agent-generated updates
 
-## Operating Model Today
+## Current Scope
 
-- **Open source first**: the core project is open source and self-hostable
-- **Single-user trust boundary**: optimized for local or personal operator workflows today
+- **Human-first control layer**: built for the person running the work, not as a hidden planner for the agent
+- **Open source and self-hosted first**: optimized for local or personal operator workflows today
 - **Review-first writes**: risky changes go through dry-run, human review, audit, and undo
-- **Optional pilot support**: onboarding and workflow design help can be layered on top when needed
+- **Not a generic notes app**: the focus is agent-heavy work, not broad personal knowledge management
+- **Not a multi-tenant SaaS today**: billing, OAuth, and multi-tenant team concerns are not the current product center
 
 ## Start Here
 
@@ -130,16 +132,6 @@ curl -sS -X POST "http://127.0.0.1:8000/api/v1/changes/${CHG_ID}/commit" \
 ```
 
 If you do not approve, reject it in `/changes` (or just do not commit).
-
-## UI Preview
-
-> Screenshots use synthetic test data.
-
-![Home dashboard (synthetic test data)](docs/assets/screenshots/home-dashboard.png)
-
-![Changes UI: dry-run diff preview](docs/assets/screenshots/changes-ui-dryrun.png)
-
-![Tasks dashboard (synthetic test data)](docs/assets/screenshots/tasks-dashboard.png)
 
 ## Quickstart (Local)
 
