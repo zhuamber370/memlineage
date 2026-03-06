@@ -4,16 +4,17 @@
 [![Open Issues](https://img.shields.io/github/issues/zhuamber370/memlineage)](https://github.com/zhuamber370/memlineage/issues)
 [![Last Commit](https://img.shields.io/github/last-commit/zhuamber370/memlineage)](https://github.com/zhuamber370/memlineage/commits/main)
 
-MemLineage is an **open-source work control layer** for people who use agents heavily.
+MemLineage is an **open-source work control layer** for people who run meaningful work through agents.
 It works with OpenClaw, Codex, and custom agent runtimes.
 
-Once chat becomes part of daily execution, it gets hard for the human operator to keep track of:
-- current goals and active tasks
+Once agents become part of daily execution, the human operator starts losing visibility into:
+- the current goal
+- active tasks and the real next step
 - durable knowledge worth keeping outside chat
-- risky writes that need review before they land
-- local runtime integration status for Codex / OpenClaw skills
+- risky writes waiting for review
+- local runtime skill state and whether the setup is still healthy
 
-MemLineage brings those workflows into one reviewable workspace.
+MemLineage brings that state into one reviewable workspace for the human, not another chat thread.
 It adds a PR-like control loop in front of agent writes:
 **dry-run -> diff preview -> human approve/reject -> commit -> audit (+ undo)**.
 
@@ -28,74 +29,26 @@ Quick links:
 - Production controls: [Safe-to-Write Checklist](docs/guides/safe-to-write-checklist.md)
 - Operator feedback thread: [GitHub Discussion #20](https://github.com/zhuamber370/memlineage/discussions/20)
 
-## Start Here
+## If This Feels Familiar
 
-- **OpenClaw user**: jump to [OpenClaw Integration](#openclaw-integration).
-- **Codex user**: jump to [Codex Integration](#codex-integration).
-- **Other agent runtime user**: start with [Quickstart (Local)](#quickstart-local), then follow [Runtime/API contract](docs/guides/agent-api-surface.md).
-- **Skill operations first**: open <http://127.0.0.1:3000/skills>.
-- **Fast product check**: run [Quickstart (Local)](#quickstart-local), then follow [60-Second Dry-Run Demo](#60-second-dry-run-demo).
+- The agents are productive, but I am losing track of the overall state.
+- Important goals, tasks, and next steps keep disappearing into chat history.
+- I want risky writes to be reviewable and reversible before they land.
+- I need a clearer control surface than raw conversation logs.
+- I want local Codex / OpenClaw skill setup and health to be visible in one place.
 
-## At a Glance
+## What You Get Today
 
-- **Core promise**: help heavy agent users stay in control of goals, tasks, knowledge, and risky writes.
-- **Governance loop**: `dry-run -> diff -> approve/reject -> commit -> audit -> undo`.
-- **Primary surfaces**: `/` (dashboard), `/tasks`, `/knowledge`, `/changes`, `/skills`.
-- **Runtime coverage**: OpenClaw + Codex out of the box, plus custom runtimes via API contract.
-
-## Latest Release (v0.1.2)
-
-- Release page: [MemLineage v0.1.2](https://github.com/zhuamber370/memlineage/releases/tag/v0.1.2)
-- Home Dashboard (`/`) now provides a global snapshot with focused `Task / Knowledge` boards.
-- Changes reminders moved to the left sidebar `Changes` nav badge (with pending count) instead of a dedicated home-board panel.
-- Dashboard cards and focus actions support query-driven deep links into `/tasks`, `/changes`, and `/knowledge`.
-- Post-release stabilization fixed `Open Studio` task selection race and stale DAG/log replay under rapid task switching.
-- Dashboard polish improved chart readability and focus-board scanning for daily operation.
-
-Supporting release docs:
-- [MVP Release Notes](docs/reports/mvp-release-notes.md)
-- [Home Dashboard Changelog (2026-03-01)](docs/reports/2026-03-01-home-dashboard-changelog.md)
-
-## Latest on main (Unreleased)
-
-- Added manual detect flow with auto runtime path fallback for skill operations.
-- Added Skill Management UI runtime actions for both OpenClaw and Codex:
-  - install / uninstall
-  - enable / disable
-  - update / health check
-- Added backend Skill Management API surface under `/api/v1/skills/*` for status, detect, path config, install, enable, update, and health.
-- Updated Home dashboard layout by removing duplicated `Changes Board` and tightening task/knowledge panel density.
-- Added left-sidebar `Changes` pending badge reminder and fixed immediate count refresh after commit/reject/undo.
-- Added Home `Database Safety` card with:
-  - local backup download (`.mlbk`)
-  - local file restore (direct DB overwrite after explicit confirmation)
-- Backup download now keeps timestamped filename from backend (`memlineage-backup-YYYYMMDD-HHMMSS.mlbk`) in browser fetch flow.
-- PostgreSQL backup/restore now targets business schema only (`public`) to avoid extension ownership conflicts during restore, and logs command stderr summary on failure.
-
-## Evaluation Flow (after stack is running)
-
-If you need to assess write safety quickly:
-
-1. Run the [60-Second Dry-Run Demo](#60-second-dry-run-demo).
-2. Open `/changes` and review one proposed diff.
-3. Commit once, then run an undo to verify rollback + audit behavior.
-
-If you run agents in production, please share your checklist in [Discussion #20](https://github.com/zhuamber370/memlineage/discussions/20).
-
-## Why MemLineage
-
-Agent-heavy workflows often break when:
-- current goals and next steps disappear into chat threads
-- reusable knowledge and day-to-day execution drift across tools
-- agent writes silently change memory and docs without a safe review loop
-- runtime setup becomes opaque or fragile when skills stop matching the local install
-
-MemLineage keeps the human operator **in control with a governed, traceable, and reversible workspace**.
+- **Home control surface**: `/` aggregates task focus, recent knowledge, pending changes, and local database safety actions
+- **Operational workspace**: `/tasks` + `/knowledge` keep day-to-day execution outside raw chat history
+- **Human review inbox**: `/changes` handles dry-run diff preview, commit / reject, undo-last, and audit-backed change review
+- **Runtime skill operations**: `/skills` manages detect / install / enable / disable / update / health for OpenClaw and Codex
+- **Self-hostable core**: FastAPI backend + Next.js frontend with SQLite or PostgreSQL backing storage
 
 ## Who It Is For
 
 - Solo builders and developer-operators using OpenClaw, Codex, or custom agents as part of daily work
-- People who need one place to track goals, tasks, durable knowledge, and reviewable changes
+- People who need one place to track goals, tasks, durable knowledge, runtime state, and reviewable changes
 - Workflows that require human approval, audit trail, and rollback for risky agent-generated updates
 
 ## Who It Is Not For
@@ -104,21 +57,26 @@ MemLineage keeps the human operator **in control with a governed, traceable, and
 - Fully autonomous write pipelines with no human review gate
 - Teams looking for SaaS multi-tenant billing/OAuth out of the box
 
-## What You Get
-
-- **Home control surface**: `/` aggregates tasks, knowledge, pending changes, and local database safety actions
-- **Operational workspace**: `/tasks` + `/knowledge` for day-to-day execution outside chat
-- **Human review inbox**: `/changes` for diff-based commit/reject/undo decisions
-- **Runtime skill operations**: `/skills` manages install / detect / enable / disable / update / health for OpenClaw and Codex
-- **Rollback safety**: undo the last committed change when needed
-
-## Open Source + Pilot Support
+## Open Source Core, Pilot Support When Needed
 
 The core project is open source and self-hostable.
 
-MemLineage is currently most useful for heavy agent users who already feel the pain of losing control once work spills across chat, task tracking, knowledge capture, and risky writes.
+If you already feel this pain in daily work, MemLineage can also be paired with pilot-style onboarding and workflow design support to help turn a messy agent setup into a visible, trackable, reviewable operating system for the human user.
 
-If you want help turning a messy agent workflow into a visible, trackable, reviewable setup, the open-source project can be paired with pilot-style onboarding and workflow design support.
+## Start Here
+
+- **OpenClaw user**: jump to [OpenClaw Integration](#openclaw-integration).
+- **Codex user**: jump to [Codex Integration](#codex-integration).
+- **Other agent runtime user**: start with [Quickstart (Local)](#quickstart-local), then follow [Runtime/API contract](docs/guides/agent-api-surface.md).
+- **Skill operations first**: open <http://127.0.0.1:3000/skills>.
+- **Fast product check**: run [Quickstart (Local)](#quickstart-local), then follow [60-Second Dry-Run Demo](#60-second-dry-run-demo).
+
+## Product Snapshot
+
+- **Core promise**: help heavy agent users stay in control of goals, tasks, knowledge, and risky writes
+- **Governance loop**: `dry-run -> diff -> approve/reject -> commit -> audit -> undo`
+- **Primary surfaces**: `/` (dashboard), `/tasks`, `/knowledge`, `/changes`, `/skills`
+- **Runtime coverage**: OpenClaw + Codex out of the box, plus custom runtimes via API contract
 
 ## 60-Second Dry-Run Demo
 
@@ -340,6 +298,45 @@ For any write request, always create a proposal first and wait for my explicit "
 Integration references:
 - Agent integration guide: [INTEGRATION.md](INTEGRATION.md)
 - Skill contract: [skills/memlineage/SKILL.md](skills/memlineage/SKILL.md)
+
+## Latest Release (v0.1.2)
+
+- Release page: [MemLineage v0.1.2](https://github.com/zhuamber370/memlineage/releases/tag/v0.1.2)
+- Home Dashboard (`/`) now provides a global snapshot with focused `Task / Knowledge` boards.
+- Changes reminders moved to the left sidebar `Changes` nav badge (with pending count) instead of a dedicated home-board panel.
+- Dashboard cards and focus actions support query-driven deep links into `/tasks`, `/changes`, and `/knowledge`.
+- Post-release stabilization fixed `Open Studio` task selection race and stale DAG/log replay under rapid task switching.
+- Dashboard polish improved chart readability and focus-board scanning for daily operation.
+
+Supporting release docs:
+- [MVP Release Notes](docs/reports/mvp-release-notes.md)
+- [Home Dashboard Changelog (2026-03-01)](docs/reports/2026-03-01-home-dashboard-changelog.md)
+
+## Latest on main (Unreleased)
+
+- Added manual detect flow with auto runtime path fallback for skill operations.
+- Added Skill Management UI runtime actions for both OpenClaw and Codex:
+  - install / uninstall
+  - enable / disable
+  - update / health check
+- Added backend Skill Management API surface under `/api/v1/skills/*` for status, detect, path config, install, enable, update, and health.
+- Updated Home dashboard layout by removing duplicated `Changes Board` and tightening task/knowledge panel density.
+- Added left-sidebar `Changes` pending badge reminder and fixed immediate count refresh after commit/reject/undo.
+- Added Home `Database Safety` card with:
+  - local backup download (`.mlbk`)
+  - local file restore (direct DB overwrite after explicit confirmation)
+- Backup download now keeps timestamped filename from backend (`memlineage-backup-YYYYMMDD-HHMMSS.mlbk`) in browser fetch flow.
+- PostgreSQL backup/restore now targets business schema only (`public`) to avoid extension ownership conflicts during restore, and logs command stderr summary on failure.
+
+## Evaluation Flow (after stack is running)
+
+If you need to assess write safety quickly:
+
+1. Run the [60-Second Dry-Run Demo](#60-second-dry-run-demo).
+2. Open `/changes` and review one proposed diff.
+3. Commit once, then run an undo to verify rollback + audit behavior.
+
+If you run agents in production, please share your checklist in [Discussion #20](https://github.com/zhuamber370/memlineage/discussions/20).
 
 ## Docs and Proof
 
