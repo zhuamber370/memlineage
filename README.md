@@ -4,23 +4,24 @@
 [![Open Issues](https://img.shields.io/github/issues/zhuamber370/memlineage)](https://github.com/zhuamber370/memlineage/issues)
 [![Last Commit](https://img.shields.io/github/last-commit/zhuamber370/memlineage)](https://github.com/zhuamber370/memlineage/commits/main)
 
-MemLineage is an **open-source work control layer** for people who run meaningful work through agents.
+MemLineage is an **open-source work control layer** for humans who run meaningful work through agents.
 It works with OpenClaw, Codex, and custom agent runtimes.
 
-Once agents become part of daily execution, the human operator starts losing visibility into:
-- the current goal
-- active tasks and the real next step
-- durable knowledge worth keeping outside chat
-- risky writes waiting for review
-- local runtime skill state and whether the setup is still healthy
+It keeps five kinds of state visible in one place:
+- goals
+- tasks and next steps
+- durable knowledge
+- governed writes and review state
+- local runtime skill state
 
-MemLineage brings that state into one reviewable workspace for the human, not another chat thread.
+MemLineage is for the human operator. It is not another chat window, and it is not an agent-side task planner.
 It adds a PR-like control loop in front of agent writes:
 **dry-run -> diff preview -> human approve/reject -> commit -> audit (+ undo)**.
 
 Quick links:
-- Try locally in 60 seconds: [Dry-Run Demo](#60-second-dry-run-demo)
 - Run full stack: [Quickstart (Local)](#quickstart-local)
+- Try locally in 60 seconds: [Dry-Run Demo](#60-second-dry-run-demo)
+- See the UI: [UI Preview](#ui-preview)
 - Manage skills in UI: <http://127.0.0.1:3000/skills>
 - Agent integration guide: [INTEGRATION.md](INTEGRATION.md)
 - Integrate with Codex: [Codex Integration](#codex-integration)
@@ -45,23 +46,25 @@ Quick links:
 - **Runtime skill operations**: `/skills` manages detect / install / enable / disable / update / health for OpenClaw and Codex
 - **Self-hostable core**: FastAPI backend + Next.js frontend with SQLite or PostgreSQL backing storage
 
+## What MemLineage Is Not
+
+- Not a generic note-taking or personal knowledge app
+- Not a hidden agent planner where tasks exist only for the model
+- Not a fully autonomous write pipeline with no human review gate
+- Not a SaaS product with multi-tenant billing / OAuth today
+
 ## Who It Is For
 
 - Solo builders and developer-operators using OpenClaw, Codex, or custom agents as part of daily work
 - People who need one place to track goals, tasks, durable knowledge, runtime state, and reviewable changes
 - Workflows that require human approval, audit trail, and rollback for risky agent-generated updates
 
-## Who It Is Not For
+## Operating Model Today
 
-- Generic note-taking or personal knowledge management without agent-heavy workflows
-- Fully autonomous write pipelines with no human review gate
-- Teams looking for SaaS multi-tenant billing/OAuth out of the box
-
-## Open Source Core, Pilot Support When Needed
-
-The core project is open source and self-hostable.
-
-If you already feel this pain in daily work, MemLineage can also be paired with pilot-style onboarding and workflow design support to help turn a messy agent setup into a visible, trackable, reviewable operating system for the human user.
+- **Open source first**: the core project is open source and self-hostable
+- **Single-user trust boundary**: optimized for local or personal operator workflows today
+- **Review-first writes**: risky changes go through dry-run, human review, audit, and undo
+- **Optional pilot support**: onboarding and workflow design help can be layered on top when needed
 
 ## Start Here
 
@@ -73,10 +76,12 @@ If you already feel this pain in daily work, MemLineage can also be paired with 
 
 ## Product Snapshot
 
+- **Human-first control model**: built to help the person stay oriented while agents execute
 - **Core promise**: help heavy agent users stay in control of goals, tasks, knowledge, and risky writes
 - **Governance loop**: `dry-run -> diff -> approve/reject -> commit -> audit -> undo`
 - **Primary surfaces**: `/` (dashboard), `/tasks`, `/knowledge`, `/changes`, `/skills`
 - **Runtime coverage**: OpenClaw + Codex out of the box, plus custom runtimes via API contract
+- **Storage model**: SQLite for quick local start, PostgreSQL for stronger persistent setups
 
 ## 60-Second Dry-Run Demo
 
