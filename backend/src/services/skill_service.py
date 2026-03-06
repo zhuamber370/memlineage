@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import plistlib
 import shutil
 import subprocess
 from datetime import datetime, timezone
@@ -591,6 +592,8 @@ class SkillService:
                         "details": {"exit_code": info.returncode},
                     }
                 )
+            else:
+                self._append_openclaw_runtime_env_warnings(info.stdout, checks, warnings)
 
             check = subprocess.run(
                 ["openclaw", "skills", "check", "--json"],
@@ -622,6 +625,111 @@ class SkillService:
                     "message": "OpenClaw CLI health probe timed out.",
                 }
             )
+
+    def _append_openclaw_runtime_env_warnings(
+        self, stdout: str, checks: List[str], warnings: List[Dict[str, Any]]
+    ) -> None:
+        payload = self._parse_json_object(stdout)
+        if payload is None:
+            return
+
+        eligible = payload.get("eligible")
+        if isinstance(eligible, bool):
+            checks.append(f"openclaw_info_eligible:{str(eligible).lower()}")
+
+        missing = payload.get("missing")
+        if not isinstance(missing, dict):
+            return
+
+        missing_env = [
+            str(item).strip()
+            for item in missing.get("env", [])
+            if isinstance(item, str) and str(item).strip()
+        ]
+        if not missing_env:
+            return
+
+        checks.append(f"openclaw_missing_env:{','.join(missing_env)}")
+        launch_agent = self._read_openclaw_launch_agent_env()
+        if launch_agent is None:
+            warnings.append(
+                {
+                    "code": "SKILL_RUNTIME_ENV_MISSING",
+                    "message": (
+                        "OpenClaw reports missing runtime env: "
+                        f"{', '.join(missing_env)}. Set them where the OpenClaw gateway runs, then restart the gateway."
+                    ),
+                    "details": {"missing_env": missing_env},
+                }
+            )
+            return
+
+        launch_agent_path, launch_agent_env = launch_agent
+        missing_in_launch_agent = [name for name in missing_env if name not in launch_agent_env]
+        if missing_in_launch_agent:
+            warnings.append(
+                {
+                    "code": "SKILL_OPENCLAW_GATEWAY_ENV_MISSING",
+                    "message": (
+                        "OpenClaw LaunchAgent is missing required MemLineage env: "
+                        f"{', '.join(missing_in_launch_agent)}. Update the LaunchAgent environment, then restart the gateway."
+                    ),
+                    "details": {
+                        "missing_env": missing_in_launch_agent,
+                        "launch_agent_path": str(launch_agent_path),
+                        "service_manager": "launchd",
+                    },
+                }
+            )
+            return
+
+        warnings.append(
+            {
+                "code": "SKILL_OPENCLAW_GATEWAY_RESTART_REQUIRED",
+                "message": (
+                    "OpenClaw LaunchAgent already defines the required MemLineage env, "
+                    "but the running gateway still reports them missing. Restart the gateway so the updated environment is loaded."
+                ),
+                "details": {
+                    "missing_env": missing_env,
+                    "launch_agent_path": str(launch_agent_path),
+                    "service_manager": "launchd",
+                },
+            }
+        )
+
+    def _parse_json_object(self, raw: str) -> Optional[Dict[str, Any]]:
+        text = str(raw or "").strip()
+        if not text:
+            return None
+        try:
+            payload = json.loads(text)
+        except json.JSONDecodeError:
+            return None
+        if isinstance(payload, dict):
+            return payload
+        return None
+
+    def _read_openclaw_launch_agent_env(self) -> Optional[Tuple[Path, set[str]]]:
+        launch_agent_path = Path.home() / "Library" / "LaunchAgents" / "ai.openclaw.gateway.plist"
+        if not launch_agent_path.is_file():
+            return None
+        try:
+            with launch_agent_path.open("rb") as handle:
+                payload = plistlib.load(handle)
+        except (OSError, plistlib.InvalidFileException):
+            return None
+
+        env_payload = payload.get("EnvironmentVariables")
+        if not isinstance(env_payload, dict):
+            return (launch_agent_path, set())
+
+        env_keys = {
+            str(key).strip()
+            for key, value in env_payload.items()
+            if isinstance(key, str) and str(key).strip() and value is not None and str(value).strip()
+        }
+        return (launch_agent_path, env_keys)
 
     def _paths_for(self, agent: str, root_dir: Path) -> Dict[str, Path]:
         target_root = root_dir / "skills"

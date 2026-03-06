@@ -45,7 +45,12 @@ if echo "${INFO_JSON}" | rg -q '"eligible"\s*:\s*true'; then
   echo "Verification: memlineage skill is discoverable and eligible."
 else
   echo "Verification: memlineage skill is discoverable but not eligible yet."
-  echo "Check required env: KMS_BASE_URL, KMS_API_KEY."
+  echo "OpenClaw is still missing runtime env required by the skill."
+  echo "Check KMS_BASE_URL and KMS_API_KEY where the OpenClaw gateway actually runs."
+  echo "If OpenClaw runs as a macOS LaunchAgent/background service, update its service env and restart the gateway."
+  echo "If AFKMS_REQUIRE_AUTH=false, KMS_API_KEY can be any non-empty placeholder such as dev-api-key."
+  echo "Re-verify with: openclaw skills info memlineage --json && openclaw skills check --json"
+  echo "Docs: README.md#openclaw-integration and docs/reports/2026-02-24-openclaw-memlineage-setup.md"
 fi
 
 echo "Done."

@@ -42,10 +42,25 @@ bash scripts/install_openclaw_memlineage_skill.sh
 bash scripts/install_codex_memlineage_skill.sh
 ```
 
-5) Configure env (where OpenClaw/Codex runs)
+5) Configure env (where OpenClaw/Codex actually runs)
 
 - `KMS_BASE_URL=http://127.0.0.1:8000`
 - `KMS_API_KEY=...`
+
+Notes:
+
+- Install/detect only manage skill files. They do not inject secrets into the runtime process.
+- If `AFKMS_REQUIRE_AUTH=false`, use any non-empty placeholder for `KMS_API_KEY` so the skill becomes eligible.
+- If OpenClaw runs as a background macOS `launchd` service, update `~/Library/LaunchAgents/ai.openclaw.gateway.plist`, then reload/restart the gateway. Shell `export` commands do not retroactively change the environment of an already-running LaunchAgent service.
+
+6) Verify from the same runtime after restart
+
+```bash
+openclaw skills info memlineage --json
+openclaw skills check --json
+```
+
+If `eligible=false`, the most common cause is missing `KMS_BASE_URL` / `KMS_API_KEY` in the gateway runtime environment rather than a missing skill install.
 
 Quick uninstall commands (script path):
 

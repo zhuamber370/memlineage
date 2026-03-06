@@ -29,6 +29,31 @@ def _mock_cli_success(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr("src.services.skill_service.subprocess.run", _fake_run)
 
 
+def _mock_cli_openclaw_env_missing(monkeypatch: pytest.MonkeyPatch):
+    def _fake_run(cmd, *args, **kwargs):
+        tokens = [str(part) for part in cmd]
+        if tokens[:2] == ["openclaw", "--version"]:
+            return _FakeRunResult(stdout="OpenClaw 2026.2.26")
+        if tokens[:2] == ["codex", "--version"]:
+            return _FakeRunResult(stdout="Codex CLI 0.0.0")
+        if tokens[:3] == ["openclaw", "skills", "info"]:
+            return _FakeRunResult(
+                stdout=json.dumps(
+                    {
+                        "name": "memlineage",
+                        "eligible": False,
+                        "requirements": {"env": ["KMS_BASE_URL", "KMS_API_KEY"]},
+                        "missing": {"env": ["KMS_BASE_URL", "KMS_API_KEY"]},
+                    }
+                )
+            )
+        if tokens[:3] == ["openclaw", "skills", "check"]:
+            return _FakeRunResult(stdout='{"ok": false}')
+        return _FakeRunResult(stdout="")
+
+    monkeypatch.setattr("src.services.skill_service.subprocess.run", _fake_run)
+
+
 def _read_version(package_json: Path) -> str:
     payload = json.loads(package_json.read_text(encoding="utf-8"))
     return str(payload.get("version", "")).strip()
@@ -264,6 +289,48 @@ def test_health_warns_when_openclaw_cli_missing(isolated_skill_env, monkeypatch:
     body = health.json()
     warning_codes = {item.get("code") for item in body["warnings"]}
     assert "SKILL_CLI_NOT_FOUND" in warning_codes
+
+
+def test_health_warns_when_openclaw_gateway_launchd_env_missing(
+    isolated_skill_env, monkeypatch: pytest.MonkeyPatch
+):
+    _mock_cli_openclaw_env_missing(monkeypatch)
+    client = make_client()
+
+    detected = _detect(client, "openclaw")
+    assert detected["detect_status"] == "ready"
+
+    install = client.post("/api/v1/skills/openclaw/install", json={"force": False})
+    assert install.status_code == 200, install.text
+
+    launch_agent = isolated_skill_env["home"] / "Library" / "LaunchAgents" / "ai.openclaw.gateway.plist"
+    launch_agent.parent.mkdir(parents=True, exist_ok=True)
+    launch_agent.write_text(
+        """<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>Label</key>
+    <string>ai.openclaw.gateway</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+      <key>PATH</key>
+      <string>/usr/bin:/bin</string>
+    </dict>
+  </dict>
+</plist>
+""",
+        encoding="utf-8",
+    )
+
+    health = client.get("/api/v1/skills/openclaw/health")
+    assert health.status_code == 200, health.text
+    body = health.json()
+    warning = next(item for item in body["warnings"] if item["code"] == "SKILL_OPENCLAW_GATEWAY_ENV_MISSING")
+    assert "LaunchAgent" in warning["message"]
+    assert "KMS_BASE_URL" in warning["message"]
+    assert warning["details"]["missing_env"] == ["KMS_BASE_URL", "KMS_API_KEY"]
+    assert warning["details"]["launch_agent_path"].endswith("ai.openclaw.gateway.plist")
 
 
 def test_invalid_skill_target_returns_validation_error(isolated_skill_env):

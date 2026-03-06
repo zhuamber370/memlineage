@@ -21,7 +21,18 @@ python3 -m uvicorn src.app:app --reload --port 8000
 2. Expose runtime env for OpenClaw
 ```bash
 export KMS_BASE_URL="http://127.0.0.1:8000"
-export KMS_API_KEY="<your_api_key>"
+export KMS_API_KEY="dev-api-key"
+```
+
+If `AFKMS_REQUIRE_AUTH=false`, any non-empty `KMS_API_KEY` value is enough for skill eligibility in local mode.
+If `AFKMS_REQUIRE_AUTH=true`, use the real backend API key.
+
+If OpenClaw is running as a macOS LaunchAgent, editing your current shell env is not enough. Add the same keys to `~/Library/LaunchAgents/ai.openclaw.gateway.plist` under `EnvironmentVariables`, then reload the service:
+
+```bash
+launchctl bootout gui/$(id -u) ai.openclaw.gateway || true
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/ai.openclaw.gateway.plist
+launchctl kickstart -k gui/$(id -u)/ai.openclaw.gateway
 ```
 
 ## Install workspace skill
@@ -40,7 +51,8 @@ openclaw skills info memlineage --json
 openclaw skills check --json
 ```
 
-If `eligible=false`, check `KMS_BASE_URL` and `KMS_API_KEY`, then restart OpenClaw gateway.
+If `eligible=false`, check `KMS_BASE_URL` and `KMS_API_KEY` in the gateway runtime environment, then restart OpenClaw gateway.
+When OpenClaw is service-managed, shell `export` alone will not fix an already-running gateway.
 
 ## Natural-language usage examples
 
