@@ -4,9 +4,16 @@
 [![Open Issues](https://img.shields.io/github/issues/zhuamber370/memlineage)](https://github.com/zhuamber370/memlineage/issues)
 [![Last Commit](https://img.shields.io/github/last-commit/zhuamber370/memlineage)](https://github.com/zhuamber370/memlineage/commits/main)
 
-MemLineage is an **open-source governed memory + task infrastructure** for agent-heavy workflows.
+MemLineage is an **open-source work control layer** for people who use agents heavily.
 It works with OpenClaw, Codex, and custom agent runtimes.
 
+Once chat becomes part of daily execution, it gets hard for the human operator to keep track of:
+- current goals and active tasks
+- durable knowledge worth keeping outside chat
+- risky writes that need review before they land
+- local runtime integration status for Codex / OpenClaw skills
+
+MemLineage brings those workflows into one reviewable workspace.
 It adds a PR-like control loop in front of agent writes:
 **dry-run -> diff preview -> human approve/reject -> commit -> audit (+ undo)**.
 
@@ -31,9 +38,9 @@ Quick links:
 
 ## At a Glance
 
-- **Core promise**: make agent writes reviewable before apply, and reversible after apply.
+- **Core promise**: help heavy agent users stay in control of goals, tasks, knowledge, and risky writes.
 - **Governance loop**: `dry-run -> diff -> approve/reject -> commit -> audit -> undo`.
-- **Primary surfaces**: `/` (dashboard), `/changes` (review inbox), `/tasks`, `/knowledge`.
+- **Primary surfaces**: `/` (dashboard), `/tasks`, `/knowledge`, `/changes`, `/skills`.
 - **Runtime coverage**: OpenClaw + Codex out of the box, plus custom runtimes via API contract.
 
 ## Latest Release (v0.1.2)
@@ -78,29 +85,40 @@ If you run agents in production, please share your checklist in [Discussion #20]
 ## Why MemLineage
 
 Agent-heavy workflows often break when:
-- agent writes silently pollute memory and docs
-- changes are hard to review, trace, and roll back
-- tasks, knowledge, and execution context drift across tools
+- current goals and next steps disappear into chat threads
+- reusable knowledge and day-to-day execution drift across tools
+- agent writes silently change memory and docs without a safe review loop
+- runtime setup becomes opaque or fragile when skills stop matching the local install
 
-MemLineage keeps workflows **governed, traceable, and reversible**.
+MemLineage keeps the human operator **in control with a governed, traceable, and reversible workspace**.
 
 ## Who It Is For
 
-- Teams or solo builders running OpenClaw, Codex, or custom agents where memory quality matters
-- Workflows that require human approval for write operations
-- Anyone who needs change audit trail and rollback for agent-generated updates
+- Solo builders and developer-operators using OpenClaw, Codex, or custom agents as part of daily work
+- People who need one place to track goals, tasks, durable knowledge, and reviewable changes
+- Workflows that require human approval, audit trail, and rollback for risky agent-generated updates
 
 ## Who It Is Not For
 
+- Generic note-taking or personal knowledge management without agent-heavy workflows
 - Fully autonomous write pipelines with no human review gate
 - Teams looking for SaaS multi-tenant billing/OAuth out of the box
 
 ## What You Get
 
-- **Governed write pipeline**: all writes go through dry-run and human review
-- **Human review inbox**: `/changes` for diff-based commit/reject decisions
-- **Operational workspace**: `/tasks` + `/knowledge` for day-to-day execution
-- **Rollback safety**: undo the last commit when needed
+- **Home control surface**: `/` aggregates tasks, knowledge, pending changes, and local database safety actions
+- **Operational workspace**: `/tasks` + `/knowledge` for day-to-day execution outside chat
+- **Human review inbox**: `/changes` for diff-based commit/reject/undo decisions
+- **Runtime skill operations**: `/skills` manages install / detect / enable / disable / update / health for OpenClaw and Codex
+- **Rollback safety**: undo the last committed change when needed
+
+## Open Source + Pilot Support
+
+The core project is open source and self-hostable.
+
+MemLineage is currently most useful for heavy agent users who already feel the pain of losing control once work spills across chat, task tracking, knowledge capture, and risky writes.
+
+If you want help turning a messy agent workflow into a visible, trackable, reviewable setup, the open-source project can be paired with pilot-style onboarding and workflow design support.
 
 ## 60-Second Dry-Run Demo
 
