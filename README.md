@@ -4,26 +4,23 @@
 [![Open Issues](https://img.shields.io/github/issues/zhuamber370/memlineage)](https://github.com/zhuamber370/memlineage/issues)
 [![Last Commit](https://img.shields.io/github/last-commit/zhuamber370/memlineage)](https://github.com/zhuamber370/memlineage/commits/main)
 
-MemLineage is an **open-source work control layer** for humans who use agents to get real work done.
+MemLineage is an **open-source control layer** for humans running agent-heavy workflows.
 It works with OpenClaw, Codex, and custom agent runtimes.
 
-When work starts to span Codex, OpenClaw, or custom agent workflows, conversation alone stops being enough.
-MemLineage gives the human operator one place to keep goals, tasks, durable knowledge, governed writes, and runtime state visible.
+When work starts to span multiple agent conversations, chat alone stops being enough.
+MemLineage gives the human operator one place to keep goals, tasks, durable knowledge, governed writes, and runtime state visible outside raw chat history.
 
-Risky writes go through a PR-like control loop:
+Governed writes follow a PR-like control loop:
 **dry-run -> diff preview -> human approve/reject -> commit -> audit (+ undo)**.
 
 Quick links:
-- Run full stack: [Quickstart (Local)](#quickstart-local)
 - Try locally in 60 seconds: [Dry-Run Demo](#60-second-dry-run-demo)
-- See the UI: [UI Preview](#ui-preview)
-- Manage skills in UI: <http://127.0.0.1:3000/skills>
-- Agent integration guide: [INTEGRATION.md](INTEGRATION.md)
+- Run the full stack: [Quickstart (Local)](#quickstart-local)
+- Integrate with OpenClaw: [OpenClaw Integration](#openclaw-integration)
 - Integrate with Codex: [Codex Integration](#codex-integration)
-- Prompt examples: [How to Talk to Your Agent](#how-to-talk-to-your-agent-skill-examples)
-- Runtime/API contract: [docs/guides/agent-api-surface.md](docs/guides/agent-api-surface.md)
-- Production controls: [Safe-to-Write Checklist](docs/guides/safe-to-write-checklist.md)
-- Operator feedback thread: [GitHub Discussion #20](https://github.com/zhuamber370/memlineage/discussions/20)
+- Build another runtime: [Runtime/API contract](docs/guides/agent-api-surface.md)
+- Review safety controls: [Safe-to-Write Checklist](docs/guides/safe-to-write-checklist.md)
+- Join the discussion: [GitHub Discussion #20](https://github.com/zhuamber370/memlineage/discussions/20)
 
 ## Why MemLineage
 
@@ -42,7 +39,7 @@ MemLineage is built to give the human operator a stable control surface outside 
 - **Run day-to-day work on `/tasks` and `/knowledge`**: keep execution and durable context outside raw chat history
 - **Review risky writes on `/changes`**: use dry-run, diff preview, commit / reject, undo-last, and audit-backed history
 - **Manage local runtime integrations on `/skills`**: detect, install, enable, disable, update, and check health for OpenClaw and Codex
-- **Self-host locally**: run the FastAPI backend and Next.js frontend with SQLite or PostgreSQL
+- **Self-host locally**: run the FastAPI backend and Next.js frontend with SQLite by default and PostgreSQL support
 
 ## UI Preview
 
@@ -60,30 +57,24 @@ MemLineage is built to give the human operator a stable control surface outside 
 - People who want one place to track goals, tasks, durable knowledge, runtime state, and reviewable changes
 - Workflows that require human approval, audit trail, and rollback for risky agent-generated updates
 
-## Current Scope
+## Choose Your Path
 
-- **Human-first control layer**: built for the person running the work, not as a hidden planner for the agent
-- **Open source and self-hosted first**: optimized for local or personal operator workflows today
-- **Review-first writes**: risky changes go through dry-run, human review, audit, and undo
-- **Not a generic notes app**: the focus is agent-heavy work, not broad personal knowledge management
-- **Not a multi-tenant SaaS today**: billing, OAuth, and multi-tenant team concerns are not the current product center
+- **Want the fastest product check?** Start with the [60-Second Dry-Run Demo](#60-second-dry-run-demo)
+- **Want to run the full app locally?** Follow [Quickstart (Local)](#quickstart-local)
+- **Using OpenClaw today?** Go to [OpenClaw Integration](#openclaw-integration)
+- **Using Codex today?** Go to [Codex Integration](#codex-integration)
+- **Building another runtime?** Read the [Runtime/API contract](docs/guides/agent-api-surface.md)
+- **Want real-world operator context?** Join [GitHub Discussion #20](https://github.com/zhuamber370/memlineage/discussions/20)
 
-## Start Here
-
-- **OpenClaw user**: jump to [OpenClaw Integration](#openclaw-integration).
-- **Codex user**: jump to [Codex Integration](#codex-integration).
-- **Other agent runtime user**: start with [Quickstart (Local)](#quickstart-local), then follow [Runtime/API contract](docs/guides/agent-api-surface.md).
-- **Skill operations first**: open <http://127.0.0.1:3000/skills>.
-- **Fast product check**: run [Quickstart (Local)](#quickstart-local), then follow [60-Second Dry-Run Demo](#60-second-dry-run-demo).
-
-## Product Snapshot
+## At a Glance
 
 - **Human-first control model**: built to help the person stay oriented while agents execute
+- **Open source and self-hosted first**: optimized for local or personal operator workflows today
 - **Core promise**: help heavy agent users stay in control of goals, tasks, knowledge, and risky writes
 - **Governance loop**: `dry-run -> diff -> approve/reject -> commit -> audit -> undo`
 - **Primary surfaces**: `/` (dashboard), `/tasks`, `/knowledge`, `/changes`, `/skills`
 - **Runtime coverage**: OpenClaw + Codex out of the box, plus custom runtimes via API contract
-- **Storage model**: SQLite for quick local start, PostgreSQL for stronger persistent setups
+- **Storage model**: SQLite by default, PostgreSQL supported
 
 ## 60-Second Dry-Run Demo
 
@@ -189,14 +180,49 @@ Option A (recommended): manage install/uninstall/enable/disable/update from UI:
 - Click `Detect` to auto-resolve runtime path (OPENCLAW_WORKSPACE_DIR -> OPENCLAW_CONFIG_PATH/openclaw.json -> ~/.openclaw/workspace)
 - If auto-detect fails, provide manual runtime root path, then click `Save Path` and `Detect` again
 - Note: this requires MemLineage backend and OpenClaw runtime on the same machine
+- Note: Detect/Install only manage the skill files. They do not inject `KMS_BASE_URL` or `KMS_API_KEY` into the OpenClaw gateway runtime.
 
 Option B: install via script:
 
 ```bash
 bash scripts/install_openclaw_memlineage_skill.sh
+```
+
+Set runtime env where the OpenClaw gateway actually runs:
+
+- If `AFKMS_REQUIRE_AUTH=false` in local quickstart mode, `KMS_API_KEY` can be any non-empty placeholder such as `dev-api-key`.
+- If `AFKMS_REQUIRE_AUTH=true`, `KMS_API_KEY` must match the backend key.
+
+If you start OpenClaw manually from your shell:
+
+```bash
+export KMS_BASE_URL="http://127.0.0.1:8000"
+export KMS_API_KEY="dev-api-key"
+openclaw gateway restart
+```
+
+If OpenClaw runs as a macOS `launchd` service, update `~/Library/LaunchAgents/ai.openclaw.gateway.plist` under `EnvironmentVariables` and then reload it:
+
+```bash
+plutil -p ~/Library/LaunchAgents/ai.openclaw.gateway.plist
+
+launchctl bootout gui/$(id -u) ai.openclaw.gateway || true
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/ai.openclaw.gateway.plist
+launchctl kickstart -k gui/$(id -u)/ai.openclaw.gateway
+```
+
+Verify after install and gateway restart:
+
+```bash
 openclaw skills info memlineage --json
 openclaw skills check --json
 ```
+
+Interpretation:
+
+- `eligible=true` means the skill files and required env are both visible to OpenClaw.
+- `eligible=false` after install usually means the gateway runtime still cannot see `KMS_BASE_URL` / `KMS_API_KEY`.
+- On macOS `launchd`, exporting vars in your current terminal is not enough for a background gateway that was started earlier as a service.
 
 Uninstall:
 
