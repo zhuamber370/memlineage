@@ -216,7 +216,6 @@ If code is unknown:
 - `propose_patch_route_node`
 - `propose_delete_route_node`
 - `propose_create_route_edge`
-- `propose_patch_route_edge`
 - `propose_delete_route_edge`
 - `propose_append_route_node_log`
 - `propose_create_knowledge`

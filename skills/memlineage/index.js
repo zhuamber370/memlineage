@@ -688,30 +688,12 @@ const skill = {
           route_id: { type: "string" },
           from_node_id: { type: "string" },
           to_node_id: { type: "string" },
-          relation: { type: "string", enum: ["refine", "initiate", "handoff"] },
-          description: { type: "string" },
         },
         required: ["route_id", "from_node_id", "to_node_id"],
       },
       handler: async (args, context) => {
         const client = createMemlineageClient(context);
         return client.proposeCreateRouteEdge(args);
-      },
-    },
-    propose_patch_route_edge: {
-      description: "Dry-run patch route edge",
-      parameters: {
-        type: "object",
-        properties: {
-          route_id: { type: "string" },
-          edge_id: { type: "string" },
-          description: { type: "string" },
-        },
-        required: ["route_id", "edge_id"],
-      },
-      handler: async (args, context) => {
-        const client = createMemlineageClient(context);
-        return client.proposePatchRouteEdge(args);
       },
     },
     propose_delete_route_edge: {

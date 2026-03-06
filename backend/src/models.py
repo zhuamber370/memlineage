@@ -407,8 +407,6 @@ class RouteEdge(Base):
     to_node_id: Mapped[str] = mapped_column(
         String(40), ForeignKey("route_nodes.id", ondelete="CASCADE"), nullable=False
     )
-    relation: Mapped[str] = mapped_column(String(20), nullable=False, default="refine")
-    description: Mapped[str] = mapped_column(Text, nullable=False, default="")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -435,7 +433,7 @@ class EntityLog(Base):
     __tablename__ = "entity_logs"
     __table_args__ = (
         CheckConstraint(
-            "entity_type IN ('route_node', 'route_edge')",
+            "entity_type IN ('route_node')",
             name="chk_entity_logs_entity_type",
         ),
     )

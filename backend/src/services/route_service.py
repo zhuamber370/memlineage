@@ -13,7 +13,6 @@ from src.schemas import (
     NodeLogCreate,
     RouteCreate,
     RouteEdgeCreate,
-    RouteEdgePatch,
     RouteNodeCreate,
     RouteNodePatch,
     RoutePatch,
@@ -301,20 +300,11 @@ class RouteGraphService:
         if existing is not None:
             raise ValueError("ROUTE_EDGE_DUPLICATE")
 
-        expected_relation = self._infer_edge_relation(
-            from_node_type=from_node.node_type,
-            to_node_type=to_node.node_type,
-        )
-        if payload.relation != expected_relation:
-            raise ValueError("ROUTE_EDGE_RELATION_MISMATCH")
-
         edge = RouteEdge(
             id=f"red_{uuid.uuid4().hex[:12]}",
             route_id=route_id,
             from_node_id=payload.from_node_id,
             to_node_id=payload.to_node_id,
-            relation=payload.relation,
-            description=payload.description or "",
         )
         self.db.add(edge)
         self.db.commit()
@@ -330,46 +320,6 @@ class RouteGraphService:
             source_refs=[f"route://{route_id}"],
         )
         return edge
-
-    def patch_edge(self, route_id: str, edge_id: str, payload: RouteEdgePatch) -> Optional[RouteEdge]:
-        self._ensure_route(route_id)
-        edge = self.db.scalar(select(RouteEdge).where(RouteEdge.id == edge_id, RouteEdge.route_id == route_id))
-        if edge is None:
-            return None
-
-        patch_data = payload.model_dump(exclude_unset=True)
-        if not patch_data:
-            raise ValueError("NO_PATCH_FIELDS")
-
-        if "description" in patch_data:
-            edge.description = patch_data["description"] or ""
-
-        self.db.add(edge)
-        self.db.commit()
-        self.db.refresh(edge)
-        log_audit_event(
-            self.db,
-            actor_type="user",
-            actor_id="local",
-            tool="api",
-            action="patch_route_edge",
-            target_type="route_edge",
-            target_id=edge.id,
-            source_refs=[f"route://{route_id}"],
-        )
-        return edge
-
-    def _infer_edge_relation(self, *, from_node_type: str, to_node_type: str) -> str:
-        normalized_from = "idea" if from_node_type == "start" else from_node_type
-        normalized_to = to_node_type
-
-        if normalized_from not in {"idea", "goal"} or normalized_to not in {"idea", "goal"}:
-            raise ValueError("ROUTE_EDGE_NODE_TYPE_UNSUPPORTED")
-        if normalized_from == "idea" and normalized_to == "idea":
-            return "refine"
-        if normalized_from == "idea" and normalized_to == "goal":
-            return "initiate"
-        return "handoff"
 
     def delete_edge(self, route_id: str, edge_id: str) -> bool:
         self._ensure_route(route_id)
@@ -405,13 +355,11 @@ class RouteGraphService:
                 select(RouteEdge)
                 .where(RouteEdge.route_id == route_id)
                 .order_by(RouteEdge.created_at.asc())
-            )
+        )
         )
         node_ids = [node.id for node in nodes]
-        edge_ids = [edge.id for edge in edges]
 
         node_has_logs: set[str] = set()
-        edge_has_logs: set[str] = set()
         if node_ids:
             node_has_logs = set(
                 self.db.scalars(
@@ -424,22 +372,8 @@ class RouteGraphService:
                     .distinct()
                 )
             )
-        if edge_ids:
-            edge_has_logs = set(
-                self.db.scalars(
-                    select(EntityLog.entity_id)
-                    .where(
-                        EntityLog.route_id == route_id,
-                        EntityLog.entity_type == "route_edge",
-                        EntityLog.entity_id.in_(edge_ids),
-                    )
-                    .distinct()
-                )
-            )
         for node in nodes:
             setattr(node, "has_logs", node.id in node_has_logs)
-        for edge in edges:
-            setattr(edge, "has_logs", edge.id in edge_has_logs)
         return nodes, edges
 
     def append_entity_log(
@@ -635,8 +569,6 @@ class RouteGraphService:
         self._ensure_route(route_id)
         if entity_type == "route_node":
             entity = self.db.get(RouteNode, entity_id)
-        elif entity_type == "route_edge":
-            entity = self.db.get(RouteEdge, entity_id)
         else:
             raise ValueError("ROUTE_ENTITY_TYPE_UNSUPPORTED")
 

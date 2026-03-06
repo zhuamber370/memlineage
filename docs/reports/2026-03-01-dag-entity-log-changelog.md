@@ -9,17 +9,14 @@
 
 ## Backend Delivery
 - Added unified log model: `entity_logs` (`entity_type + entity_id`).
-- Delivered node and edge log CRUD APIs (including patch/delete).
-- Added `has_logs` to route graph response for both nodes and edges.
-- Kept legacy `description` fields for compatibility, but no longer use them as the primary execution log entry.
+- Current contract keeps `entity_logs` for route nodes only.
+- Edge log CRUD has been removed from the active API surface.
+- Route graph response keeps `has_logs` on nodes only.
+- Route edges are plain connectors (`from_node_id -> to_node_id`) with no relation/description metadata contract.
 
 ## Frontend Delivery
 - Replaced description editor with a log panel in the execution inspector.
 - Simplified add-step form to `title + status`.
-- Simplified DAG edge interactions:
-  - Removed edge-type checks and relation-label rendering.
-  - Removed edge-log entry and edge selection interactions.
-  - Kept pure node-to-node connection lines only.
 - Fixed idea-to-route flow so created execution nodes use `goal` type.
 - Upgraded DAG layout engine:
   - Migrated from custom layering to `@dagrejs/dagre`.

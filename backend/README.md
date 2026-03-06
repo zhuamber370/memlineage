@@ -101,17 +101,12 @@ python3 -m uvicorn src.app:app --reload --port 8000
   - `PATCH /api/v1/routes/{route_id}/nodes/{node_id}`
   - `DELETE /api/v1/routes/{route_id}/nodes/{node_id}`
   - `POST /api/v1/routes/{route_id}/edges`
-  - `PATCH /api/v1/routes/{route_id}/edges/{edge_id}`
   - `DELETE /api/v1/routes/{route_id}/edges/{edge_id}`
   - `GET /api/v1/routes/{route_id}/graph`
   - `PATCH /api/v1/routes/{route_id}/nodes/{node_id}/logs/{log_id}`
   - `DELETE /api/v1/routes/{route_id}/nodes/{node_id}/logs/{log_id}`
   - `POST /api/v1/routes/{route_id}/nodes/{node_id}/logs`
   - `GET /api/v1/routes/{route_id}/nodes/{node_id}/logs`
-  - `POST /api/v1/routes/{route_id}/edges/{edge_id}/logs`
-  - `GET /api/v1/routes/{route_id}/edges/{edge_id}/logs`
-  - `PATCH /api/v1/routes/{route_id}/edges/{edge_id}/logs/{log_id}`
-  - `DELETE /api/v1/routes/{route_id}/edges/{edge_id}/logs/{log_id}`
 
 ### Governance / audit / context
 - `changes`
@@ -147,9 +142,8 @@ python3 -m uvicorn src.app:app --reload --port 8000
 - `create_route_node`
 - `patch_route_node`
 - `delete_route_node`
-- `create_route_edge`
-- `patch_route_edge`
-- `delete_route_edge`
+- `create_route_edge` (connector-only)
+- `delete_route_edge` (connector-only)
 - `append_route_node_log`
 - `create_knowledge`
 - `patch_knowledge`
@@ -164,6 +158,7 @@ python3 -m uvicorn src.app:app --reload --port 8000
 - `knowledge` API currently persists into the `notes` table (`category: ops_manual | mechanism_spec | decision_record`).
 - `knowledge_items`/`knowledge_evidences` tables may exist in schema history, but runtime knowledge CRUD is currently note-backed.
 - Route graph logs now use unified `entity_logs` storage (`entity_type + entity_id`), while legacy node log responses remain readable for compatibility.
+- Route edges are connector-only links between nodes. They do not carry relation, description, or log metadata.
 
 ## DB Backup/Restore Notes
 

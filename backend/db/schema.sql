@@ -53,6 +53,72 @@ CREATE TABLE IF NOT EXISTS tasks (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS routes (
+  id VARCHAR(40) PRIMARY KEY,
+  task_id VARCHAR(40) REFERENCES tasks(id) ON DELETE SET NULL,
+  name VARCHAR(160) NOT NULL,
+  goal TEXT NOT NULL DEFAULT '',
+  status VARCHAR(20) NOT NULL DEFAULT 'candidate',
+  priority VARCHAR(2),
+  owner VARCHAR(120),
+  parent_route_id VARCHAR(40) REFERENCES routes(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS route_nodes (
+  id VARCHAR(40) PRIMARY KEY,
+  route_id VARCHAR(40) NOT NULL REFERENCES routes(id) ON DELETE CASCADE,
+  node_type VARCHAR(20) NOT NULL,
+  title VARCHAR(200) NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  status VARCHAR(20) NOT NULL DEFAULT 'waiting',
+  parent_node_id VARCHAR(40) REFERENCES route_nodes(id) ON DELETE SET NULL,
+  order_hint INTEGER NOT NULL DEFAULT 0,
+  assignee_type VARCHAR(20) NOT NULL DEFAULT 'human',
+  assignee_id VARCHAR(80),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS route_edges (
+  id VARCHAR(40) PRIMARY KEY,
+  route_id VARCHAR(40) NOT NULL REFERENCES routes(id) ON DELETE CASCADE,
+  from_node_id VARCHAR(40) NOT NULL REFERENCES route_nodes(id) ON DELETE CASCADE,
+  to_node_id VARCHAR(40) NOT NULL REFERENCES route_nodes(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS node_logs (
+  id VARCHAR(40) PRIMARY KEY,
+  node_id VARCHAR(40) NOT NULL REFERENCES route_nodes(id) ON DELETE CASCADE,
+  actor_type VARCHAR(20) NOT NULL DEFAULT 'human',
+  actor_id VARCHAR(80) NOT NULL DEFAULT 'local',
+  content TEXT NOT NULL,
+  log_type VARCHAR(20) NOT NULL DEFAULT 'note',
+  source_ref TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS entity_logs (
+  id VARCHAR(40) PRIMARY KEY,
+  route_id VARCHAR(40) NOT NULL REFERENCES routes(id) ON DELETE CASCADE,
+  entity_type VARCHAR(20) NOT NULL,
+  entity_id VARCHAR(40) NOT NULL,
+  actor_type VARCHAR(20) NOT NULL DEFAULT 'human',
+  actor_id VARCHAR(80) NOT NULL DEFAULT 'local',
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT chk_entity_logs_entity_type CHECK (entity_type IN ('route_node'))
+);
+
+CREATE INDEX IF NOT EXISTS ix_entity_logs_route_entity
+ON entity_logs (route_id, entity_type, entity_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS ix_entity_logs_route_id
+ON entity_logs (route_id);
+
 CREATE TABLE IF NOT EXISTS journals (
   id VARCHAR(40) PRIMARY KEY,
   journal_date DATE NOT NULL UNIQUE,

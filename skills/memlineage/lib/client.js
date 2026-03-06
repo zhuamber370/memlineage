@@ -832,19 +832,8 @@ function createMemlineageClient(context) {
       route_id: args.route_id,
       from_node_id: args.from_node_id,
       to_node_id: args.to_node_id,
-      relation: args.relation || "refine",
-      description: args.description || "",
     };
     return proposeSingle("create_route_edge", payload, args);
-  }
-
-  async function proposePatchRouteEdge(args) {
-    if (!args.route_id) throw new Error("route_id is required");
-    if (!args.edge_id) throw new Error("edge_id is required");
-    const payload = { route_id: args.route_id, edge_id: args.edge_id };
-    if (Object.prototype.hasOwnProperty.call(args, "description")) payload.description = args.description;
-    if (Object.keys(payload).length <= 2) throw new Error("at least one patch field is required");
-    return proposeSingle("patch_route_edge", payload, args);
   }
 
   async function proposeDeleteRouteEdge(args) {
@@ -963,7 +952,6 @@ function createMemlineageClient(context) {
     proposePatchRouteNode,
     proposeDeleteRouteNode,
     proposeCreateRouteEdge,
-    proposePatchRouteEdge,
     proposeDeleteRouteEdge,
     proposeAppendRouteNodeLog,
     proposeCreateKnowledge,

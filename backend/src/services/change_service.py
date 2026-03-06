@@ -43,7 +43,6 @@ from src.schemas import (
     NotePatch,
     RouteCreate,
     RouteEdgeCreate,
-    RouteEdgePatch,
     RouteNodeCreate,
     RouteNodePatch,
     RoutePatch,
@@ -82,7 +81,6 @@ UPDATE_ACTIONS = {
     "patch_idea",
     "patch_route",
     "patch_route_node",
-    "patch_route_edge",
     "patch_knowledge",
     "archive_knowledge",
 }
@@ -205,7 +203,6 @@ class ChangeService:
             "route_node_patch": 0,
             "route_node_delete": 0,
             "route_edge_create": 0,
-            "route_edge_patch": 0,
             "route_edge_delete": 0,
             "route_node_log_append": 0,
             "knowledge_create": 0,
@@ -245,8 +242,6 @@ class ChangeService:
                 summary["route_node_delete"] += 1
             elif action.type == "create_route_edge":
                 summary["route_edge_create"] += 1
-            elif action.type == "patch_route_edge":
-                summary["route_edge_patch"] += 1
             elif action.type == "delete_route_edge":
                 summary["route_edge_delete"] += 1
             elif action.type == "append_route_node_log":
@@ -495,28 +490,6 @@ class ChangeService:
             )
             if existing is not None:
                 raise ValueError("ROUTE_EDGE_DUPLICATE")
-            expected_relation = graph._infer_edge_relation(
-                from_node_type=from_node.node_type, to_node_type=to_node.node_type
-            )
-            if model.relation != expected_relation:
-                raise ValueError("ROUTE_EDGE_RELATION_MISMATCH")
-            return
-        if action_type == "patch_route_edge":
-            route_id = payload.get("route_id")
-            edge_id = payload.get("edge_id")
-            if not route_id:
-                raise ValueError("ROUTE_ID_REQUIRED")
-            if not edge_id:
-                raise ValueError("ROUTE_EDGE_ID_REQUIRED")
-            edge = self.db.scalar(select(RouteEdge).where(RouteEdge.id == edge_id, RouteEdge.route_id == route_id))
-            if edge is None:
-                raise ValueError("ROUTE_EDGE_NOT_FOUND")
-            patch_model = RouteEdgePatch.model_validate(
-                {k: v for k, v in payload.items() if k not in {"route_id", "edge_id"}}
-            )
-            patch_data = patch_model.model_dump(exclude_unset=True)
-            if not patch_data:
-                raise ValueError("NO_PATCH_FIELDS")
             return
         if action_type == "delete_route_edge":
             route_id = payload.get("route_id")
@@ -816,7 +789,6 @@ class ChangeService:
             "patch_route_node",
             "delete_route_node",
             "create_route_edge",
-            "patch_route_edge",
             "delete_route_edge",
             "append_route_node_log",
             "create_knowledge",
@@ -848,7 +820,6 @@ class ChangeService:
             "patch_route_node": "route_node",
             "delete_route_node": "route_node",
             "create_route_edge": "route_edge",
-            "patch_route_edge": "route_edge",
             "delete_route_edge": "route_edge",
             "append_route_node_log": "node_log",
             "create_knowledge": "knowledge",
@@ -875,7 +846,6 @@ class ChangeService:
             "patch_route_node": "update",
             "delete_route_node": "delete",
             "create_route_edge": "create",
-            "patch_route_edge": "update",
             "delete_route_edge": "delete",
             "append_route_node_log": "append",
             "create_knowledge": "create",
@@ -927,8 +897,6 @@ class ChangeService:
             return self._apply_delete_route_node(payload)
         if action.action_type == "create_route_edge":
             return self._apply_create_route_edge(payload)
-        if action.action_type == "patch_route_edge":
-            return self._apply_patch_route_edge(payload)
         if action.action_type == "delete_route_edge":
             return self._apply_delete_route_edge(payload)
         if action.action_type == "append_route_node_log":
@@ -1560,20 +1528,12 @@ class ChangeService:
         )
         if existing is not None:
             raise ValueError("ROUTE_EDGE_DUPLICATE")
-        expected_relation = graph._infer_edge_relation(
-            from_node_type=from_node.node_type,
-            to_node_type=to_node.node_type,
-        )
-        if model.relation != expected_relation:
-            raise ValueError("ROUTE_EDGE_RELATION_MISMATCH")
 
         edge = RouteEdge(
             id=f"red_{uuid.uuid4().hex[:12]}",
             route_id=route_id,
             from_node_id=model.from_node_id,
             to_node_id=model.to_node_id,
-            relation=model.relation,
-            description=model.description or "",
         )
         self.db.add(edge)
         self.db.flush()
@@ -1583,36 +1543,6 @@ class ChangeService:
             "entity": "route_edge",
             "entity_id": edge.id,
             "route_id": route_id,
-        }
-
-    def _apply_patch_route_edge(self, payload: dict) -> dict:
-        route_id = payload.get("route_id")
-        edge_id = payload.get("edge_id")
-        if not route_id:
-            raise ValueError("ROUTE_ID_REQUIRED")
-        if not edge_id:
-            raise ValueError("ROUTE_EDGE_ID_REQUIRED")
-        edge = self.db.scalar(select(RouteEdge).where(RouteEdge.id == edge_id, RouteEdge.route_id == route_id))
-        if edge is None:
-            raise ValueError("ROUTE_EDGE_NOT_FOUND")
-        patch_model = RouteEdgePatch.model_validate(
-            {k: v for k, v in payload.items() if k not in {"route_id", "edge_id"}}
-        )
-        patch_data = patch_model.model_dump(exclude_unset=True)
-        if not patch_data:
-            raise ValueError("NO_PATCH_FIELDS")
-        before = {"description": self._json_safe(edge.description)}
-        if "description" in patch_data:
-            edge.description = patch_data["description"] or ""
-        self.db.add(edge)
-        after = {"description": self._json_safe(edge.description)}
-        return {
-            "status": "applied",
-            "action_type": "patch_route_edge",
-            "entity": "route_edge",
-            "entity_id": edge.id,
-            "before": before,
-            "after": after,
         }
 
     def _apply_delete_route_edge(self, payload: dict) -> dict:
@@ -1630,8 +1560,6 @@ class ChangeService:
             "route_id": edge.route_id,
             "from_node_id": edge.from_node_id,
             "to_node_id": edge.to_node_id,
-            "relation": edge.relation,
-            "description": edge.description,
             "created_at": self._json_safe(edge.created_at),
         }
         self.db.delete(edge)
@@ -1873,9 +1801,6 @@ class ChangeService:
             return
         if action_type == "create_route_edge":
             self._rollback_create_route_edge(result)
-            return
-        if action_type == "patch_route_edge":
-            self._rollback_patch_route_edge(result)
             return
         if action_type == "delete_route_edge":
             self._rollback_delete_route_edge(result)
@@ -2144,19 +2069,6 @@ class ChangeService:
         if edge:
             self.db.delete(edge)
 
-    def _rollback_patch_route_edge(self, result: dict) -> None:
-        edge_id = result.get("entity_id")
-        if not isinstance(edge_id, str) or not edge_id:
-            raise ValueError("CHANGE_ACTION_RESULT_MISSING_ENTITY_ID")
-        edge = self.db.get(RouteEdge, edge_id)
-        if edge is None:
-            raise ValueError("ROUTE_EDGE_NOT_FOUND")
-        before = result.get("before")
-        if not isinstance(before, dict):
-            raise ValueError("CHANGE_ACTION_RESULT_MISSING_BEFORE")
-        edge.description = str(before.get("description") or "")
-        self.db.add(edge)
-
     def _rollback_delete_route_edge(self, result: dict) -> None:
         before = result.get("before")
         if not isinstance(before, dict):
@@ -2171,8 +2083,6 @@ class ChangeService:
             route_id=str(before.get("route_id") or ""),
             from_node_id=str(before.get("from_node_id") or ""),
             to_node_id=str(before.get("to_node_id") or ""),
-            relation=str(before.get("relation") or "refine"),
-            description=str(before.get("description") or ""),
             created_at=self._datetime_from_json(before.get("created_at")),
         )
         self.db.add(edge)

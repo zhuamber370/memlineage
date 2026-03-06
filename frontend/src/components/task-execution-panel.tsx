@@ -13,8 +13,6 @@ type RawStepType = "start" | "goal" | "idea";
 type StepType = "start" | "goal";
 type EditableStepType = Exclude<StepType, "start">;
 type StepStatus = "waiting" | "execute" | "done";
-type StepEdgeRelation = "refine" | "initiate" | "handoff";
-type CreatableEdgeRelation = StepEdgeRelation;
 type TaskStatus = "todo" | "in_progress" | "done" | "cancelled";
 
 type Flow = {
@@ -44,9 +42,6 @@ type StepEdge = {
   id: string;
   from_node_id: string;
   to_node_id: string;
-  relation: StepEdgeRelation;
-  description: string;
-  has_logs: boolean;
 };
 
 type FlowGraphOut = {
@@ -58,7 +53,7 @@ type FlowGraphOut = {
 type EntityLog = {
   id: string;
   route_id: string;
-  entity_type: "route_node" | "route_edge";
+  entity_type: "route_node";
   entity_id: string;
   actor_type: "human" | "agent";
   actor_id: string;
@@ -121,12 +116,6 @@ function mapNodeClass(step: Step, selected: boolean): string {
 function nodeStatusOptions(nodeType: StepType): StepStatus[] {
   if (nodeType === "start") return ["done"];
   return ["waiting", "execute", "done"];
-}
-
-function inferEdgeRelation(predecessorType: StepType | null): CreatableEdgeRelation | null {
-  if (!predecessorType) return null;
-  if (predecessorType === "start") return "initiate";
-  return "handoff";
 }
 
 function startStepStatus(_nodeType: EditableStepType): StepStatus {
@@ -239,16 +228,6 @@ export function TaskExecutionPanel({ taskId, onTaskStarted }: { taskId: string; 
     return `/api/v1/routes/${selectedFlowId}/nodes/${inspectorTarget.node.id}/logs`;
   }, [inspectorTarget, selectedFlowId]);
 
-  const predecessorNode = useMemo(
-    () => stepById.get(newPredecessorNodeId) ?? null,
-    [stepById, newPredecessorNodeId]
-  );
-
-  const inferredEdgeType = useMemo(
-    () => inferEdgeRelation(predecessorNode?.node_type ?? null),
-    [predecessorNode?.node_type]
-  );
-
   const successorsByStepId = useMemo(() => {
     const map = new Map<string, number>();
     for (const edge of edges) {
@@ -306,7 +285,7 @@ export function TaskExecutionPanel({ taskId, onTaskStarted }: { taskId: string; 
       if (!stepById.has(edge.from_node_id) || !stepById.has(edge.to_node_id)) continue;
       layoutGraph.setEdge(edge.from_node_id, edge.to_node_id, {
         minlen: 1,
-        weight: edge.relation === "initiate" ? 3 : edge.relation === "handoff" ? 2 : 1
+        weight: 1
       });
     }
 
@@ -653,7 +632,6 @@ export function TaskExecutionPanel({ taskId, onTaskStarted }: { taskId: string; 
     title: string;
     status: StepStatus;
     predecessorNodeId: string;
-    relation: CreatableEdgeRelation;
     orderHint?: number;
   }) {
     const created = await apiPost<Step>(`/api/v1/routes/${payload.routeId}/nodes`, {
@@ -667,9 +645,7 @@ export function TaskExecutionPanel({ taskId, onTaskStarted }: { taskId: string; 
 
     await apiPost(`/api/v1/routes/${payload.routeId}/edges`, {
       from_node_id: payload.predecessorNodeId,
-      to_node_id: created.id,
-      relation: payload.relation,
-      description: ""
+      to_node_id: created.id
     });
   }
 
@@ -693,16 +669,12 @@ export function TaskExecutionPanel({ taskId, onTaskStarted }: { taskId: string; 
         order_hint: 1,
         assignee_type: "human"
       });
-
-      const startEdgeRelation = inferEdgeRelation("start") ?? "initiate";
-
       await createNodeWithEdge({
         routeId: createdFlow.id,
         nodeType: startStepType,
         title: startGoalTitle.trim(),
         status: startStepStatus(startStepType),
         predecessorNodeId: createdStart.id,
-        relation: startEdgeRelation,
         orderHint: 2
       });
 
@@ -741,10 +713,6 @@ export function TaskExecutionPanel({ taskId, onTaskStarted }: { taskId: string; 
 
   async function onAddStep() {
     if (!selectedFlowId || !newPredecessorNodeId || !newStepTitle.trim()) return;
-    if (!inferredEdgeType) {
-      setError(t("tasks.execution.predecessorHint"));
-      return;
-    }
     setCreatingStep(true);
     setError("");
     try {
@@ -753,8 +721,7 @@ export function TaskExecutionPanel({ taskId, onTaskStarted }: { taskId: string; 
         nodeType: "goal",
         title: newStepTitle.trim(),
         status: newStepStatus,
-        predecessorNodeId: newPredecessorNodeId,
-        relation: inferredEdgeType
+        predecessorNodeId: newPredecessorNodeId
       });
       setNewStepTitle("");
       setInlineActionMode(null);

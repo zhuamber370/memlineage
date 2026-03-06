@@ -38,6 +38,20 @@ test("memlineage skill exposes comprehensive read actions", () => {
   }
 });
 
+test("route edge skill actions use connector-only contract", () => {
+  const actionNames = Object.keys(skill.actions);
+  assert.ok(actionNames.includes("propose_create_route_edge"));
+  assert.ok(actionNames.includes("propose_delete_route_edge"));
+  assert.ok(!actionNames.includes("propose_patch_route_edge"));
+
+  const createProps = skill.actions.propose_create_route_edge.parameters.properties;
+  assert.ok(Object.prototype.hasOwnProperty.call(createProps, "route_id"));
+  assert.ok(Object.prototype.hasOwnProperty.call(createProps, "from_node_id"));
+  assert.ok(Object.prototype.hasOwnProperty.call(createProps, "to_node_id"));
+  assert.ok(!Object.prototype.hasOwnProperty.call(createProps, "relation"));
+  assert.ok(!Object.prototype.hasOwnProperty.call(createProps, "description"));
+});
+
 test("list_tasks supports full backend query filters", () => {
   const properties = skill.actions.list_tasks.parameters.properties;
   const expectedFilters = ["archived", "stale_days", "due_before", "updated_before", "view"];
@@ -133,7 +147,7 @@ test("getTaskExecutionSnapshot resolves task from natural-language query", async
             { id: "n1", node_type: "goal", title: "开源推广", status: "execute", order_hint: 1 },
             { id: "n0", node_type: "start", title: "Start", status: "done", order_hint: 0 },
           ],
-          edges: [{ id: "e1", from_node_id: "n0", to_node_id: "n1", relation: "initiate" }],
+          edges: [{ id: "e1", from_node_id: "n0", to_node_id: "n1" }],
         }),
         text: async () => "",
       };

@@ -68,9 +68,8 @@ All agent writes should use governed write flow:
 - `create_route_node`
 - `patch_route_node`
 - `delete_route_node`
-- `create_route_edge`
-- `patch_route_edge`
-- `delete_route_edge`
+- `create_route_edge` (connector-only)
+- `delete_route_edge` (connector-only)
 - `append_route_node_log`
 - `create_knowledge`
 - `patch_knowledge`
@@ -100,7 +99,8 @@ All agent writes should use governed write flow:
 - `create_idea`, `patch_idea`, `promote_idea`
 - `create_route`, `patch_route`
 - `create_route_node`, `patch_route_node`, `delete_route_node`
-- `create_route_edge`, `patch_route_edge`, `delete_route_edge`
+- `create_route_edge`, `delete_route_edge`
+- Route edges are connector-only links between nodes. They do not carry relation, description, or log metadata.
 - `append_route_node_log`
 
 ### Links + inbox

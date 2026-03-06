@@ -460,7 +460,6 @@ class ChangeActionIn(BaseModel):
         "patch_route_node",
         "delete_route_node",
         "create_route_edge",
-        "patch_route_edge",
         "delete_route_edge",
         "append_route_node_log",
         "create_knowledge",
@@ -573,8 +572,7 @@ RouteStatus = Literal["candidate", "active", "parked", "completed", "cancelled"]
 RouteNodeType = Literal["start", "goal", "idea"]
 RouteNodeStatus = Literal["waiting", "execute", "done"]
 RouteAssigneeType = Literal["human", "agent"]
-RouteEdgeRelation = Literal["refine", "initiate", "handoff"]
-EntityType = Literal["route_node", "route_edge"]
+EntityType = Literal["route_node"]
 NodeLogType = Literal["note", "evidence", "decision", "summary"]
 
 
@@ -707,13 +705,6 @@ class RouteEdgeCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     from_node_id: str = Field(min_length=1)
     to_node_id: str = Field(min_length=1)
-    relation: RouteEdgeRelation = "refine"
-    description: str = ""
-
-
-class RouteEdgePatch(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    description: Optional[str] = None
 
 
 class RouteEdgeOut(BaseModel):
@@ -722,9 +713,6 @@ class RouteEdgeOut(BaseModel):
     route_id: str
     from_node_id: str
     to_node_id: str
-    relation: RouteEdgeRelation
-    description: str
-    has_logs: bool = False
     created_at: datetime
 
 

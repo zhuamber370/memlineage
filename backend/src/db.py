@@ -151,7 +151,6 @@ def ensure_runtime_schema(engine) -> None:
         "ALTER TABLE routes ADD COLUMN IF NOT EXISTS task_id VARCHAR(40)",
         "ALTER TABLE routes ADD COLUMN IF NOT EXISTS parent_route_id VARCHAR(40)",
         "ALTER TABLE route_nodes ADD COLUMN IF NOT EXISTS parent_node_id VARCHAR(40)",
-        "ALTER TABLE route_edges ADD COLUMN IF NOT EXISTS description TEXT",
         "ALTER TABLE node_logs ADD COLUMN IF NOT EXISTS log_type VARCHAR(20)",
         "ALTER TABLE node_logs ADD COLUMN IF NOT EXISTS source_ref TEXT",
         "ALTER TABLE notes ADD COLUMN IF NOT EXISTS topic_id VARCHAR(40)",
@@ -181,7 +180,7 @@ def ensure_runtime_schema(engine) -> None:
         """,
         "UPDATE tasks SET description = '' WHERE description IS NULL",
         "UPDATE tasks SET acceptance_criteria = '' WHERE acceptance_criteria IS NULL",
-        "UPDATE route_edges SET description = '' WHERE description IS NULL",
+        "DELETE FROM entity_logs WHERE entity_type = 'route_edge'",
         "UPDATE node_logs SET log_type = 'note' WHERE log_type IS NULL",
         """
         INSERT INTO topics (id, name, name_en, name_zh, kind, status, summary)
@@ -320,8 +319,8 @@ def ensure_runtime_schema(engine) -> None:
         "ALTER TABLE notes ALTER COLUMN status SET NOT NULL",
         "ALTER TABLE notes ALTER COLUMN category SET DEFAULT 'mechanism_spec'",
         "ALTER TABLE notes ALTER COLUMN category SET NOT NULL",
-        "ALTER TABLE route_edges ALTER COLUMN description SET DEFAULT ''",
-        "ALTER TABLE route_edges ALTER COLUMN description SET NOT NULL",
+        "ALTER TABLE route_edges DROP COLUMN IF EXISTS relation",
+        "ALTER TABLE route_edges DROP COLUMN IF EXISTS description",
         "ALTER TABLE node_logs ALTER COLUMN log_type SET DEFAULT 'note'",
         "ALTER TABLE node_logs ALTER COLUMN log_type SET NOT NULL",
         """
@@ -402,19 +401,8 @@ def ensure_runtime_schema(engine) -> None:
           END IF;
         END $$;
         """,
-        """
-        DO $$
-        BEGIN
-          IF NOT EXISTS (
-            SELECT 1 FROM pg_constraint
-            WHERE conname = 'chk_entity_logs_entity_type'
-          ) THEN
-            ALTER TABLE entity_logs
-              ADD CONSTRAINT chk_entity_logs_entity_type
-              CHECK (entity_type IN ('route_node', 'route_edge'));
-          END IF;
-        END $$;
-        """,
+        "ALTER TABLE entity_logs DROP CONSTRAINT IF EXISTS chk_entity_logs_entity_type",
+        "ALTER TABLE entity_logs ADD CONSTRAINT chk_entity_logs_entity_type CHECK (entity_type IN ('route_node'))",
         """
         CREATE TABLE IF NOT EXISTS task_sources (
           id VARCHAR(40) PRIMARY KEY,
@@ -547,7 +535,7 @@ def _ensure_runtime_schema_sqlite(engine) -> None:
                   content TEXT NOT NULL,
                   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
                   updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                  CHECK (entity_type IN ('route_node', 'route_edge'))
+                  CHECK (entity_type IN ('route_node'))
                 )
                 """
             )
@@ -587,7 +575,6 @@ def _ensure_runtime_schema_sqlite(engine) -> None:
         _sqlite_add_column_if_missing(conn, "routes", "task_id VARCHAR(40)")
         _sqlite_add_column_if_missing(conn, "routes", "parent_route_id VARCHAR(40)")
         _sqlite_add_column_if_missing(conn, "route_nodes", "parent_node_id VARCHAR(40)")
-        _sqlite_add_column_if_missing(conn, "route_edges", "description TEXT NOT NULL DEFAULT ''")
         _sqlite_add_column_if_missing(conn, "node_logs", "log_type VARCHAR(20) NOT NULL DEFAULT 'note'")
         _sqlite_add_column_if_missing(conn, "node_logs", "source_ref TEXT")
         _sqlite_add_column_if_missing(conn, "notes", "category VARCHAR(40) NOT NULL DEFAULT 'mechanism_spec'")
@@ -596,7 +583,6 @@ def _ensure_runtime_schema_sqlite(engine) -> None:
         )
         _sqlite_add_column_if_missing(conn, "skill_runtimes", "resolved_root_path TEXT")
         _sqlite_add_column_if_missing(conn, "skill_runtimes", "resolved_root_source VARCHAR(20)")
-        conn.execute(text("UPDATE route_edges SET description = '' WHERE description IS NULL"))
         conn.execute(text("UPDATE node_logs SET log_type = 'note' WHERE log_type IS NULL"))
         conn.execute(text("UPDATE notes SET category = 'mechanism_spec' WHERE category IS NULL"))
         conn.execute(
@@ -637,6 +623,8 @@ def _ensure_runtime_schema_sqlite(engine) -> None:
             )
         )
         _sqlite_rebuild_tasks_table_if_needed(conn)
+        _sqlite_rebuild_route_edges_table_if_needed(conn)
+        _sqlite_rebuild_entity_logs_table_if_needed(conn)
         _sqlite_drop_cycles_table_if_present(conn)
         for stmt in statements:
             conn.execute(text(stmt))
@@ -742,6 +730,117 @@ def _sqlite_rebuild_tasks_table_if_needed(conn) -> None:
         )
         conn.execute(text("DROP TABLE tasks"))
         conn.execute(text("ALTER TABLE tasks__memlineage_new RENAME TO tasks"))
+    finally:
+        conn.execute(text("PRAGMA foreign_keys=ON"))
+
+
+def _sqlite_rebuild_route_edges_table_if_needed(conn) -> None:
+    exists = conn.execute(
+        text("SELECT 1 FROM sqlite_master WHERE type='table' AND name = :table_name"),
+        {"table_name": "route_edges"},
+    ).fetchone()
+    if exists is None:
+        return
+    info = conn.execute(text("PRAGMA table_info(route_edges)")).fetchall()
+    current_columns = {str(row[1]) for row in info}
+    legacy_columns = {"relation", "description"}
+    if not (current_columns & legacy_columns):
+        return
+
+    conn.execute(text("PRAGMA foreign_keys=OFF"))
+    try:
+        conn.execute(
+            text(
+                """
+                CREATE TABLE route_edges__memlineage_new (
+                  id VARCHAR(40) PRIMARY KEY,
+                  route_id VARCHAR(40) NOT NULL REFERENCES routes(id) ON DELETE CASCADE,
+                  from_node_id VARCHAR(40) NOT NULL REFERENCES route_nodes(id) ON DELETE CASCADE,
+                  to_node_id VARCHAR(40) NOT NULL REFERENCES route_nodes(id) ON DELETE CASCADE,
+                  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+                """
+            )
+        )
+        created_at_expr = "created_at" if "created_at" in current_columns else "CURRENT_TIMESTAMP"
+        conn.execute(
+            text(
+                f"""
+                INSERT INTO route_edges__memlineage_new (id, route_id, from_node_id, to_node_id, created_at)
+                SELECT id, route_id, from_node_id, to_node_id, {created_at_expr}
+                FROM route_edges
+                """
+            )
+        )
+        conn.execute(text("DROP TABLE route_edges"))
+        conn.execute(text("ALTER TABLE route_edges__memlineage_new RENAME TO route_edges"))
+    finally:
+        conn.execute(text("PRAGMA foreign_keys=ON"))
+
+
+def _sqlite_rebuild_entity_logs_table_if_needed(conn) -> None:
+    exists = conn.execute(
+        text("SELECT 1 FROM sqlite_master WHERE type='table' AND name = :table_name"),
+        {"table_name": "entity_logs"},
+    ).fetchone()
+    if exists is None:
+        return
+    create_sql = conn.execute(
+        text("SELECT sql FROM sqlite_master WHERE type='table' AND name = :table_name"),
+        {"table_name": "entity_logs"},
+    ).scalar()
+    legacy_route_edge_rows = conn.execute(
+        text("SELECT 1 FROM entity_logs WHERE entity_type = 'route_edge' LIMIT 1")
+    ).fetchone()
+    if "route_edge" not in str(create_sql or "") and legacy_route_edge_rows is None:
+        return
+
+    conn.execute(text("PRAGMA foreign_keys=OFF"))
+    try:
+        conn.execute(text("DROP INDEX IF EXISTS ix_entity_logs_route_entity"))
+        conn.execute(text("DROP INDEX IF EXISTS ix_entity_logs_route_id"))
+        conn.execute(
+            text(
+                """
+                CREATE TABLE entity_logs__memlineage_new (
+                  id VARCHAR(40) PRIMARY KEY,
+                  route_id VARCHAR(40) NOT NULL REFERENCES routes(id) ON DELETE CASCADE,
+                  entity_type VARCHAR(20) NOT NULL,
+                  entity_id VARCHAR(40) NOT NULL,
+                  actor_type VARCHAR(20) NOT NULL DEFAULT 'human',
+                  actor_id VARCHAR(80) NOT NULL DEFAULT 'local',
+                  content TEXT NOT NULL,
+                  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  CHECK (entity_type IN ('route_node'))
+                )
+                """
+            )
+        )
+        conn.execute(
+            text(
+                """
+                INSERT INTO entity_logs__memlineage_new (
+                  id, route_id, entity_type, entity_id, actor_type, actor_id, content, created_at, updated_at
+                )
+                SELECT
+                  id, route_id, entity_type, entity_id, actor_type, actor_id, content, created_at, updated_at
+                FROM entity_logs
+                WHERE entity_type = 'route_node'
+                """
+            )
+        )
+        conn.execute(text("DROP TABLE entity_logs"))
+        conn.execute(text("ALTER TABLE entity_logs__memlineage_new RENAME TO entity_logs"))
+        conn.execute(
+            text(
+                """
+                CREATE INDEX IF NOT EXISTS ix_entity_logs_route_entity
+                ON entity_logs (route_id, entity_type, entity_id, created_at DESC)
+                """
+            )
+        )
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_entity_logs_route_id ON entity_logs (route_id)"))
     finally:
         conn.execute(text("PRAGMA foreign_keys=ON"))
 

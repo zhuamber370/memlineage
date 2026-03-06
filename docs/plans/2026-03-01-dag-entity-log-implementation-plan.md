@@ -3,12 +3,12 @@
 > **For Claude:** REQUIRED SUB-SKILL: Use `superpowers:executing-plans` to execute this plan task by task.
 
 ## Goal
-Replace node/edge `description` editing entry points with unified execution logs stored in `entity_logs`, and expose log presence on DAG graph elements via badges.
+Replace node `description` editing entry points with unified execution logs stored in `entity_logs`, and expose log presence on DAG nodes via badges.
 
 ## Architecture
 - Backend introduces a unified `entity_logs` model keyed by `entity_type + entity_id`.
-- Node and edge log CRUD share the same service logic.
-- `/graph` returns `has_logs` for nodes and edges.
+- Node log CRUD remains the only supported execution-log path.
+- `/graph` returns `has_logs` for nodes.
 - Frontend inspector switches from description editor to log panel.
 
 ## Task Breakdown
@@ -64,7 +64,7 @@ Replace node/edge `description` editing entry points with unified execution logs
 
 ---
 
-### Task 4: Routes API Endpoints for Node + Edge Logs
+### Task 4: Routes API Endpoints for Node Logs
 **Files**
 - `backend/src/routes/routes.py`
 - `backend/src/schemas.py`
@@ -72,8 +72,7 @@ Replace node/edge `description` editing entry points with unified execution logs
 
 **Implementation**
 1. Add full node log CRUD endpoints.
-2. Add symmetric edge log CRUD endpoints.
-3. Map validation exceptions to stable API error codes.
+2. Map validation exceptions to stable API error codes.
 
 **Verification**
 - `cd backend && python3 -m pytest -q tests/test_routes_api.py`
@@ -88,7 +87,7 @@ Replace node/edge `description` editing entry points with unified execution logs
 
 **Implementation**
 1. Extend route graph output schemas with `has_logs: bool`.
-2. Batch compute log existence by route and annotate nodes/edges.
+2. Batch compute log existence by route and annotate nodes.
 
 **Verification**
 - `cd backend && python3 -m pytest -q tests/test_routes_api.py`
@@ -104,12 +103,11 @@ Replace node/edge `description` editing entry points with unified execution logs
 **Implementation**
 1. Remove description draft/save state and handlers.
 2. Add log panel states (`entityLogs`, draft, edit mode).
-3. Branch API calls by selected entity kind (node/edge).
-4. Render create/edit/delete log interactions in inspector.
+3. Render create/edit/delete log interactions in inspector.
 
 **Verification**
 - `cd frontend && npm run build`
-- Manual: create/edit/delete logs for both nodes and edges.
+- Manual: create/edit/delete logs for nodes.
 
 ---
 
@@ -120,8 +118,7 @@ Replace node/edge `description` editing entry points with unified execution logs
 
 **Implementation**
 1. Render node badge when `node.has_logs` is true.
-2. Render edge badge when `edge.has_logs` is true.
-3. Keep status-color semantics intact.
+2. Keep status-color semantics intact.
 
 **Verification**
 - `cd frontend && npm run build`
@@ -136,35 +133,34 @@ Replace node/edge `description` editing entry points with unified execution logs
 - `docs/reports/2026-03-01-dag-entity-log-changelog.md`
 
 **Implementation**
-1. Document node/edge log APIs and unified storage.
+1. Document node log APIs and unified storage.
 2. Keep legacy node-log read path behavior documented.
 3. Add release notes and changelog updates.
 
 **Verification**
-- `rg -n "entity_logs|node logs|edge logs" backend/README.md docs/reports -S`
+- `rg -n "entity_logs|node logs" backend/README.md docs/reports -S`
 
 ---
 
 ### Task 9: End-to-End Validation and Closeout
 **Verification checklist**
 1. Node log CRUD works.
-2. Edge log CRUD works.
-3. Timestamps are auto-generated and updated correctly.
-4. Graph badges reflect true log presence.
-5. Description editor entry point is removed.
-6. Regression checks pass for existing route graph flows.
+2. Timestamps are auto-generated and updated correctly.
+3. Graph badges reflect true log presence.
+4. Description editor entry point is removed.
+5. Regression checks pass for existing route graph flows.
 
 **Commands**
 - Backend: `cd backend && python3 -m pytest -q`
 - Frontend: `cd frontend && npm run build`
 
 ## Error Contract
-- `404`: route/node/edge/log not found
+- `404`: route/node/log not found
 - `422`: invalid payload (e.g., empty content)
 - `409`: cross-route or invalid ownership mapping
 
 ## Engineering Constraints
-1. DRY: use shared service logic for node and edge logs.
+1. DRY: use shared service logic for node logs and compatibility wrappers.
 2. YAGNI: no attachments/comments/search in this phase.
 3. Verification-first: run checks after each task.
 

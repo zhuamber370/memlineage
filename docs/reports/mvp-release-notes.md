@@ -8,9 +8,9 @@
 - Governed write flow: `dry-run -> commit/reject -> undo-last`
 - Audit events with chain metadata (`change_set_id`, `commit_id`, `action_index`)
 - DAG execution graph logging upgrade:
-  - unified `entity_logs` model for node/edge execution logs
-  - node + edge log CRUD API exposure under `/api/v1/routes/{route_id}/.../logs`
-  - `/api/v1/routes/{route_id}/graph` includes node/edge `has_logs` for badge rendering
+  - unified `entity_logs` model for route-node execution logs
+  - only node log CRUD remains exposed under `/api/v1/routes/{route_id}/nodes/{node_id}/logs`
+  - `/api/v1/routes/{route_id}/graph` includes `has_logs` on nodes only
 - Task Command Center UI (desktop-first):
   - search + filter + grouped list + detail in one screen
   - task detail above execution graph
@@ -23,8 +23,6 @@
     - delete (leaf node only)
   - task execution panel simplification:
     - add-step inline form now keeps only title + status
-    - edge relation selection/edge inspector entry removed
-    - edge line keeps pure connection display only
 - Home Dashboard (`/`) for personal overview:
   - global snapshot + `Task / Knowledge` board layout
   - pending change proposals are surfaced as a left-sidebar `Changes` badge reminder

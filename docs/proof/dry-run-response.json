@@ -18,7 +18,6 @@
     "route_node_patch": 0,
     "route_node_delete": 0,
     "route_edge_create": 0,
-    "route_edge_patch": 0,
     "route_edge_delete": 0,
     "route_node_log_append": 0,
     "knowledge_create": 1,

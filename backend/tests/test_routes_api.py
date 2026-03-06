@@ -368,7 +368,7 @@ def test_node_log_compatibility_snapshot_include_logs_survives_fetch_error():
     assert selected["n2"][0]["id"] == "nlg_ok"
 
 
-def test_route_edge_logs_crud_placeholder_fails_initially():
+def test_route_edge_logs_routes_not_exposed():
     client = make_client()
     task_id = create_test_task(client, prefix="route_edge_log_placeholder_task")
 
@@ -400,13 +400,13 @@ def test_route_edge_logs_crud_placeholder_fails_initially():
 
     edge = client.post(
         f"/api/v1/routes/{route_id}/edges",
-        json={"from_node_id": from_node_id, "to_node_id": to_node_id, "relation": "initiate"},
+        json={"from_node_id": from_node_id, "to_node_id": to_node_id},
     )
     assert edge.status_code == 201
     edge_id = edge.json()["id"]
 
     listed = client.get(f"/api/v1/routes/{route_id}/edges/{edge_id}/logs")
-    assert listed.status_code == 200
+    assert listed.status_code == 404
 
 
 def test_entity_log_response_shape():
@@ -445,7 +445,7 @@ def test_entity_log_response_shape():
     assert body["entity_id"] == node_id
 
 
-def test_entity_logs_crud_for_node_and_edge():
+def test_entity_logs_crud_for_node_only():
     client = make_client()
     task_id = create_test_task(client, prefix="entity_logs_service_task")
 
@@ -467,20 +467,6 @@ def test_entity_logs_crud_for_node_and_edge():
     )
     assert node.status_code == 201
     node_id = node.json()["id"]
-
-    node2 = client.post(
-        f"/api/v1/routes/{route_id}/nodes",
-        json={"node_type": "goal", "title": "Node2", "description": ""},
-    )
-    assert node2.status_code == 201
-    node2_id = node2.json()["id"]
-
-    edge = client.post(
-        f"/api/v1/routes/{route_id}/edges",
-        json={"from_node_id": node_id, "to_node_id": node2_id, "relation": "handoff"},
-    )
-    assert edge.status_code == 201
-    edge_id = edge.json()["id"]
 
     route2 = client.post(
         "/api/v1/routes",
@@ -528,35 +514,7 @@ def test_entity_logs_crud_for_node_and_edge():
     assert patched_node_log is not None
     assert patched_node_log.content == "node-log-updated"
 
-    edge_log = service.append_entity_log(
-        route_id,
-        "route_edge",
-        edge_id,
-        EntityLogCreate(content=f"edge-log-{uniq('entry')}", actor_type="human", actor_id="tester"),
-    )
-    assert edge_log.entity_type == "route_edge"
-    assert edge_log.entity_id == edge_id
-
-    edge_logs = service.list_entity_logs(route_id, "route_edge", edge_id)
-    assert any(item.id == edge_log.id for item in edge_logs)
-
-    patched_edge_log = service.patch_entity_log(
-        route_id,
-        "route_edge",
-        edge_id,
-        edge_log.id,
-        EntityLogPatch(content="edge-log-updated"),
-    )
-    assert patched_edge_log is not None
-    assert patched_edge_log.content == "edge-log-updated"
-
     assert service.delete_entity_log(route_id, "route_node", node_id, node_log.id) is True
-    assert service.delete_entity_log(route_id, "route_edge", edge_id, edge_log.id) is True
-    try:
-        service.delete_entity_log(route_id, "route_edge", edge_id, edge_log.id)
-        assert False, "expected ROUTE_ENTITY_LOG_NOT_FOUND"
-    except ValueError as exc:
-        assert str(exc) == "ROUTE_ENTITY_LOG_NOT_FOUND"
 
     try:
         service.append_entity_log(
@@ -607,7 +565,7 @@ def test_entity_logs_crud_for_node_and_edge():
     engine.dispose()
 
 
-def test_entity_log_routes_exposed():
+def test_entity_log_routes_exposed_for_nodes_only():
     client = make_client()
     task_id = create_test_task(client, prefix="entity_log_routes_task")
 
@@ -639,7 +597,7 @@ def test_entity_log_routes_exposed():
 
     edge = client.post(
         f"/api/v1/routes/{route_id}/edges",
-        json={"from_node_id": node1_id, "to_node_id": node2_id, "relation": "handoff"},
+        json={"from_node_id": node1_id, "to_node_id": node2_id},
     )
     assert edge.status_code == 201
     edge_id = edge.json()["id"]
@@ -659,26 +617,13 @@ def test_entity_log_routes_exposed():
     assert patched_node_log.json()["content"] == "node-log-updated"
 
     listed_edge_logs = client.get(f"/api/v1/routes/{route_id}/edges/{edge_id}/logs")
-    assert listed_edge_logs.status_code == 200
-    assert listed_edge_logs.json()["items"] == []
+    assert listed_edge_logs.status_code == 404
 
     created_edge_log = client.post(
         f"/api/v1/routes/{route_id}/edges/{edge_id}/logs",
         json={"content": "edge-log-created", "actor_type": "human", "actor_id": "tester"},
     )
-    assert created_edge_log.status_code == 201
-    edge_log_id = created_edge_log.json()["id"]
-    assert created_edge_log.json()["entity_type"] == "route_edge"
-
-    patched_edge_log = client.patch(
-        f"/api/v1/routes/{route_id}/edges/{edge_id}/logs/{edge_log_id}",
-        json={"content": "edge-log-updated"},
-    )
-    assert patched_edge_log.status_code == 200
-    assert patched_edge_log.json()["content"] == "edge-log-updated"
-
-    deleted_edge_log = client.delete(f"/api/v1/routes/{route_id}/edges/{edge_id}/logs/{edge_log_id}")
-    assert deleted_edge_log.status_code == 204
+    assert created_edge_log.status_code == 404
 
     deleted_node_log = client.delete(f"/api/v1/routes/{route_id}/nodes/{node1_id}/logs/{node_log_id}")
     assert deleted_node_log.status_code == 204
@@ -687,11 +632,10 @@ def test_entity_log_routes_exposed():
         f"/api/v1/routes/{route_id}/edges/{edge_id}/logs",
         json={"content": "   ", "actor_type": "human", "actor_id": "tester"},
     )
-    assert empty_content.status_code == 422
-    assert empty_content.json()["error"]["code"] == "ROUTE_LOG_CONTENT_EMPTY"
+    assert empty_content.status_code == 404
 
 
-def test_route_graph_marks_has_logs_for_node_and_edge():
+def test_route_graph_marks_has_logs_for_node_only():
     client = make_client()
     task_id = create_test_task(client, prefix="graph_has_logs_task")
 
@@ -723,7 +667,7 @@ def test_route_graph_marks_has_logs_for_node_and_edge():
 
     edge = client.post(
         f"/api/v1/routes/{route_id}/edges",
-        json={"from_node_id": node1_id, "to_node_id": node2_id, "relation": "handoff"},
+        json={"from_node_id": node1_id, "to_node_id": node2_id},
     )
     assert edge.status_code == 201
     edge_id = edge.json()["id"]
@@ -733,7 +677,7 @@ def test_route_graph_marks_has_logs_for_node_and_edge():
     node_before = next(item for item in graph_before.json()["nodes"] if item["id"] == node1_id)
     edge_before = next(item for item in graph_before.json()["edges"] if item["id"] == edge_id)
     assert node_before["has_logs"] is False
-    assert edge_before["has_logs"] is False
+    assert "has_logs" not in edge_before
 
     node_log = client.post(
         f"/api/v1/routes/{route_id}/nodes/{node1_id}/logs",
@@ -741,30 +685,24 @@ def test_route_graph_marks_has_logs_for_node_and_edge():
     )
     assert node_log.status_code == 201
 
-    edge_log = client.post(
-        f"/api/v1/routes/{route_id}/edges/{edge_id}/logs",
-        json={"content": "edge graph log", "actor_type": "human", "actor_id": "tester"},
-    )
-    assert edge_log.status_code == 201
-
     graph_after = client.get(f"/api/v1/routes/{route_id}/graph")
     assert graph_after.status_code == 200
     node_after = next(item for item in graph_after.json()["nodes"] if item["id"] == node1_id)
     edge_after = next(item for item in graph_after.json()["edges"] if item["id"] == edge_id)
     assert node_after["has_logs"] is True
-    assert edge_after["has_logs"] is True
+    assert "has_logs" not in edge_after
 
 
-def test_route_edges_are_inferred_by_node_type():
+def test_route_edges_are_plain_connectors():
     client = make_client()
-    task_id = create_test_task(client, prefix="route_edge_relations_task")
+    task_id = create_test_task(client, prefix="route_edge_connectors_task")
 
     route = client.post(
         "/api/v1/routes",
         json={
             "task_id": task_id,
-            "name": f"route_test_{uniq('edge_rel')}",
-            "goal": "edge relation semantics",
+            "name": f"route_test_{uniq('edge_conn')}",
+            "goal": "edge connector semantics",
             "status": "candidate",
         },
     )
@@ -792,47 +730,36 @@ def test_route_edges_are_inferred_by_node_type():
     assert goal1.status_code == 201
     goal1_id = goal1.json()["id"]
 
-    refine = client.post(
+    first_edge = client.post(
         f"/api/v1/routes/{route_id}/edges",
         json={
             "from_node_id": idea1_id,
             "to_node_id": idea2_id,
-            "relation": "refine",
-            "description": "refine under same branch",
         },
     )
-    assert refine.status_code == 201
-    assert refine.json()["relation"] == "refine"
-    assert refine.json()["description"] == "refine under same branch"
+    assert first_edge.status_code == 201
+    assert set(first_edge.json()) >= {"id", "route_id", "from_node_id", "to_node_id", "created_at"}
+    assert "relation" not in first_edge.json()
+    assert "description" not in first_edge.json()
+    assert "has_logs" not in first_edge.json()
 
-    initiate = client.post(
+    second_edge = client.post(
         f"/api/v1/routes/{route_id}/edges",
         json={
             "from_node_id": idea2_id,
             "to_node_id": goal1_id,
-            "relation": "initiate",
         },
     )
-    assert initiate.status_code == 201
-    assert initiate.json()["relation"] == "initiate"
-
-    handoff = client.post(
-        f"/api/v1/routes/{route_id}/edges",
-        json={
-            "from_node_id": goal1_id,
-            "to_node_id": idea1_id,
-            "relation": "handoff",
-        },
-    )
-    assert handoff.status_code == 201
-    assert handoff.json()["relation"] == "handoff"
+    assert second_edge.status_code == 201
 
     graph = client.get(f"/api/v1/routes/{route_id}/graph")
     assert graph.status_code == 200
     edges = graph.json()["edges"]
-    assert any(edge["relation"] == "refine" for edge in edges)
-    assert any(edge["relation"] == "initiate" for edge in edges)
-    assert any(edge["relation"] == "handoff" for edge in edges)
+    assert any(edge["from_node_id"] == idea1_id and edge["to_node_id"] == idea2_id for edge in edges)
+    assert any(edge["from_node_id"] == idea2_id and edge["to_node_id"] == goal1_id for edge in edges)
+    assert all("relation" not in edge for edge in edges)
+    assert all("description" not in edge for edge in edges)
+    assert all("has_logs" not in edge for edge in edges)
 
     goal2 = client.post(
         f"/api/v1/routes/{route_id}/nodes",
@@ -846,22 +773,18 @@ def test_route_edges_are_inferred_by_node_type():
         json={
             "from_node_id": goal1_id,
             "to_node_id": goal2_id,
-            "relation": "handoff",
         },
     )
     assert goal_to_goal.status_code == 201
-    assert goal_to_goal.json()["relation"] == "handoff"
 
     mismatch = client.post(
         f"/api/v1/routes/{route_id}/edges",
         json={
             "from_node_id": idea1_id,
             "to_node_id": goal2_id,
-            "relation": "refine",
         },
     )
-    assert mismatch.status_code == 409
-    assert mismatch.json()["error"]["code"] == "ROUTE_EDGE_RELATION_MISMATCH"
+    assert mismatch.status_code == 201
 
 
 def test_route_nodes_edges_and_logs():
@@ -908,7 +831,7 @@ def test_route_nodes_edges_and_logs():
 
     edge = client.post(
         f"/api/v1/routes/{route1_id}/edges",
-        json={"from_node_id": n1_id, "to_node_id": n2_id, "relation": "initiate"},
+        json={"from_node_id": n1_id, "to_node_id": n2_id},
     )
     assert edge.status_code == 201
 
@@ -929,7 +852,7 @@ def test_route_nodes_edges_and_logs():
 
     cross = client.post(
         f"/api/v1/routes/{route1_id}/edges",
-        json={"from_node_id": n1_id, "to_node_id": other_node_id, "relation": "initiate"},
+        json={"from_node_id": n1_id, "to_node_id": other_node_id},
     )
     assert cross.status_code == 422
     assert cross.json()["error"]["code"] == "ROUTE_EDGE_CROSS_ROUTE"
@@ -980,16 +903,16 @@ def test_route_nodes_edges_and_logs():
     assert delete_again.json()["error"]["code"] == "ROUTE_NODE_NOT_FOUND"
 
 
-def test_patch_route_edge_description():
+def test_route_edges_do_not_support_patch_or_logs():
     client = make_client()
-    task_id = create_test_task(client, prefix="route_edge_patch_task")
+    task_id = create_test_task(client, prefix="route_edge_contract_task")
 
     route = client.post(
         "/api/v1/routes",
         json={
             "task_id": task_id,
-            "name": f"route_test_{uniq('edge_patch')}",
-            "goal": "edge description updates",
+            "name": f"route_test_{uniq('edge_contract')}",
+            "goal": "edge contract updates",
             "status": "candidate",
         },
     )
@@ -1012,27 +935,22 @@ def test_patch_route_edge_description():
 
     edge = client.post(
         f"/api/v1/routes/{route_id}/edges",
-        json={"from_node_id": idea_id, "to_node_id": goal_id, "relation": "initiate"},
+        json={"from_node_id": idea_id, "to_node_id": goal_id},
     )
     assert edge.status_code == 201
     edge_id = edge.json()["id"]
-    assert edge.json()["description"] == ""
 
     patched = client.patch(
         f"/api/v1/routes/{route_id}/edges/{edge_id}",
-        json={"description": "handoff condition: KPI>=target"},
+        json={"from_node_id": goal_id},
     )
-    assert patched.status_code == 200
-    assert patched.json()["description"] == "handoff condition: KPI>=target"
+    assert patched.status_code == 405
 
-    graph = client.get(f"/api/v1/routes/{route_id}/graph")
-    assert graph.status_code == 200
-    graph_edge = next(item for item in graph.json()["edges"] if item["id"] == edge_id)
-    assert graph_edge["description"] == "handoff condition: KPI>=target"
-
-    not_found = client.patch(
-        f"/api/v1/routes/{route_id}/edges/red_missing",
-        json={"description": "x"},
+    create_log = client.post(
+        f"/api/v1/routes/{route_id}/edges/{edge_id}/logs",
+        json={"content": "obsolete edge log", "actor_type": "human", "actor_id": "tester"},
     )
-    assert not_found.status_code == 404
-    assert not_found.json()["error"]["code"] == "ROUTE_EDGE_NOT_FOUND"
+    assert create_log.status_code == 404
+
+    list_logs = client.get(f"/api/v1/routes/{route_id}/edges/{edge_id}/logs")
+    assert list_logs.status_code == 404
