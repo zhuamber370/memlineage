@@ -81,6 +81,13 @@ python3 -m uvicorn src.app:app --reload --port 8000
   - `POST /api/v1/inbox/captures`
   - `GET /api/v1/inbox`
   - `GET /api/v1/inbox/{inbox_id}`
+- `news`
+  - `POST /api/v1/news`
+  - `GET /api/v1/news`
+  - `GET /api/v1/news/{news_id}`
+  - `PATCH /api/v1/news/{news_id}`
+  - `POST /api/v1/news/{news_id}/archive`
+  - `DELETE /api/v1/news/{news_id}`
 - `journals`
   - `POST /api/v1/journals/upsert-append`
   - `GET /api/v1/journals`
@@ -149,6 +156,10 @@ python3 -m uvicorn src.app:app --reload --port 8000
 - `patch_knowledge`
 - `archive_knowledge`
 - `delete_knowledge`
+- `create_news`
+- `patch_news`
+- `archive_news`
+- `delete_news`
 - `create_link`
 - `delete_link`
 - `capture_inbox`
@@ -156,6 +167,10 @@ python3 -m uvicorn src.app:app --reload --port 8000
 ## Data Notes
 
 - `knowledge` API currently persists into the `notes` table (`category: ops_manual | mechanism_spec | decision_record`).
+- `news` is a dedicated runtime domain:
+  - `news_items`: core card content/status/timestamps/raw payload
+  - `news_sources`: primary/reference source URLs
+  - no `topic_id`, no downstream promotion/linkage table
 - `knowledge_items`/`knowledge_evidences` tables may exist in schema history, but runtime knowledge CRUD is currently note-backed.
 - Route graph logs now use unified `entity_logs` storage (`entity_type + entity_id`), while legacy node log responses remain readable for compatibility.
 - Route edges are connector-only links between nodes. They do not carry relation, description, or log metadata.

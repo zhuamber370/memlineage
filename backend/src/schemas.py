@@ -13,6 +13,8 @@ TopicStatus = Literal["active", "watch", "archived"]
 NoteStatus = Literal["active", "archived"]
 KnowledgeStatus = Literal["active", "archived"]
 KnowledgeCategory = Literal["ops_manual", "mechanism_spec", "decision_record"]
+NewsStatus = Literal["new", "tracking", "actioned", "archived"]
+NewsSourceRole = Literal["primary", "reference"]
 SkillAgent = Literal["openclaw", "codex"]
 SkillDetectStatus = Literal["unknown", "ready", "failed"]
 SkillRuntimeStatus = Literal["unknown", "installed", "not_installed"]
@@ -396,6 +398,68 @@ class KnowledgeListOut(BaseModel):
     total: int
 
 
+class NewsSourceIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    role: NewsSourceRole
+    url: str = Field(min_length=1)
+
+
+class NewsSourceOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    role: NewsSourceRole
+    url: str
+
+
+class NewsCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    title: str = Field(min_length=1, max_length=200)
+    summary: str = Field(min_length=1)
+    opportunity: str = Field(min_length=1)
+    risk: str = Field(min_length=1)
+    tags: list[str] = Field(default_factory=list)
+    published_at: datetime
+    captured_at: datetime
+    sources: list[NewsSourceIn] = Field(min_length=1)
+    raw_payload_json: dict[str, Any] = Field(default_factory=dict)
+
+
+class NewsPatch(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    title: Optional[str] = Field(default=None, min_length=1, max_length=200)
+    summary: Optional[str] = Field(default=None, min_length=1)
+    opportunity: Optional[str] = Field(default=None, min_length=1)
+    risk: Optional[str] = Field(default=None, min_length=1)
+    tags: Optional[list[str]] = None
+    status: Optional[NewsStatus] = None
+    published_at: Optional[datetime] = None
+    captured_at: Optional[datetime] = None
+    sources: Optional[list[NewsSourceIn]] = None
+    raw_payload_json: Optional[dict[str, Any]] = None
+
+
+class NewsOut(BaseModel):
+    id: str
+    title: str
+    summary: str
+    opportunity: str
+    risk: str
+    tags: list[str]
+    status: NewsStatus
+    published_at: datetime
+    captured_at: datetime
+    raw_payload_json: dict[str, Any]
+    sources: list[NewsSourceOut]
+    created_at: datetime
+    updated_at: datetime
+
+
+class NewsListOut(BaseModel):
+    items: list[NewsOut]
+    page: int
+    page_size: int
+    total: int
+
+
 class LinkCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     from_type: Literal["note", "task"]
@@ -466,6 +530,10 @@ class ChangeActionIn(BaseModel):
         "patch_knowledge",
         "archive_knowledge",
         "delete_knowledge",
+        "create_news",
+        "patch_news",
+        "archive_news",
+        "delete_news",
         "create_link",
         "delete_link",
         "capture_inbox",

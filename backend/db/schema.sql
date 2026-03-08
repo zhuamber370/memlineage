@@ -190,6 +190,28 @@ CREATE TABLE IF NOT EXISTS knowledge_evidences (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS news_items (
+  id VARCHAR(40) PRIMARY KEY,
+  title VARCHAR(200) NOT NULL,
+  summary TEXT NOT NULL,
+  opportunity TEXT NOT NULL,
+  risk TEXT NOT NULL,
+  tags_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+  status VARCHAR(20) NOT NULL DEFAULT 'new',
+  published_at TIMESTAMPTZ NOT NULL,
+  captured_at TIMESTAMPTZ NOT NULL,
+  raw_payload_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS news_sources (
+  id VARCHAR(40) PRIMARY KEY,
+  news_id VARCHAR(40) NOT NULL REFERENCES news_items(id) ON DELETE CASCADE,
+  role VARCHAR(20) NOT NULL,
+  url TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS links (
   id VARCHAR(40) PRIMARY KEY,
   from_type VARCHAR(20) NOT NULL,

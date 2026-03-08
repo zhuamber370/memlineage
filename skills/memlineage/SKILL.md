@@ -199,6 +199,8 @@ If code is unknown:
 - `get_inbox`
 - `list_knowledge`
 - `get_knowledge`
+- `list_news`
+- `get_news`
 - `api_get` (fallback generic GET for uncovered `/api/v1/*` paths only)
 
 ## Write Actions
@@ -219,6 +221,10 @@ If code is unknown:
 - `propose_delete_route_edge`
 - `propose_append_route_node_log`
 - `propose_create_knowledge`
+- `propose_capture_news_batch`
+- `propose_patch_news`
+- `propose_archive_news`
+- `propose_delete_news`
 - `propose_patch_knowledge`
 - `propose_archive_knowledge`
 - `propose_delete_knowledge`
@@ -242,3 +248,15 @@ Optional:
 ```bash
 export KMS_ACTOR_ID="openclaw"
 ```
+
+## News Notes
+
+- `propose_capture_news_batch` expands one structured batch into one dry-run change set containing multiple `create_news` actions.
+- News stores:
+  - title / summary / opportunity / risk
+  - one primary source URL + optional reference URLs
+  - `published_at` / `captured_at`
+  - `tags[]`
+  - `raw_payload_json`
+- First release does not deduplicate repeated events across batches.
+- News does not carry `topic_id` and does not support downstream promotion/linkage.

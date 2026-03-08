@@ -414,6 +414,32 @@ def ensure_runtime_schema(engine) -> None:
         )
         """,
         """
+        CREATE TABLE IF NOT EXISTS news_items (
+          id VARCHAR(40) PRIMARY KEY,
+          title VARCHAR(200) NOT NULL,
+          summary TEXT NOT NULL,
+          opportunity TEXT NOT NULL,
+          risk TEXT NOT NULL,
+          tags_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+          status VARCHAR(20) NOT NULL DEFAULT 'new',
+          published_at TIMESTAMPTZ NOT NULL,
+          captured_at TIMESTAMPTZ NOT NULL,
+          raw_payload_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS news_sources (
+          id VARCHAR(40) PRIMARY KEY,
+          news_id VARCHAR(40) NOT NULL REFERENCES news_items(id) ON DELETE CASCADE,
+          role VARCHAR(20) NOT NULL,
+          url TEXT NOT NULL
+        )
+        """,
+        "ALTER TABLE news_items DROP COLUMN IF EXISTS topic_id",
+        "DROP TABLE IF EXISTS news_links",
+        """
         CREATE TABLE IF NOT EXISTS change_actions (
           id VARCHAR(40) PRIMARY KEY,
           change_set_id VARCHAR(40) NOT NULL REFERENCES change_sets(id) ON DELETE CASCADE,
@@ -571,6 +597,38 @@ def _ensure_runtime_schema_sqlite(engine) -> None:
                 """
             )
         )
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS news_items (
+                  id VARCHAR(40) PRIMARY KEY,
+                  title VARCHAR(200) NOT NULL,
+                  summary TEXT NOT NULL,
+                  opportunity TEXT NOT NULL,
+                  risk TEXT NOT NULL,
+                  tags_json JSON NOT NULL DEFAULT '[]',
+                  status VARCHAR(20) NOT NULL DEFAULT 'new',
+                  published_at TIMESTAMPTZ NOT NULL,
+                  captured_at TIMESTAMPTZ NOT NULL,
+                  raw_payload_json JSON NOT NULL DEFAULT '{}',
+                  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+                """
+            )
+        )
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS news_sources (
+                  id VARCHAR(40) PRIMARY KEY,
+                  news_id VARCHAR(40) NOT NULL REFERENCES news_items(id) ON DELETE CASCADE,
+                  role VARCHAR(20) NOT NULL,
+                  url TEXT NOT NULL
+                )
+                """
+            )
+        )
         _sqlite_add_column_if_missing(conn, "ideas", "task_id VARCHAR(40)")
         _sqlite_add_column_if_missing(conn, "routes", "task_id VARCHAR(40)")
         _sqlite_add_column_if_missing(conn, "routes", "parent_route_id VARCHAR(40)")
@@ -625,6 +683,8 @@ def _ensure_runtime_schema_sqlite(engine) -> None:
         _sqlite_rebuild_tasks_table_if_needed(conn)
         _sqlite_rebuild_route_edges_table_if_needed(conn)
         _sqlite_rebuild_entity_logs_table_if_needed(conn)
+        _sqlite_rebuild_news_items_table_if_needed(conn)
+        _sqlite_drop_table_if_present(conn, "news_links")
         _sqlite_drop_cycles_table_if_present(conn)
         for stmt in statements:
             conn.execute(text(stmt))
@@ -845,9 +905,94 @@ def _sqlite_rebuild_entity_logs_table_if_needed(conn) -> None:
         conn.execute(text("PRAGMA foreign_keys=ON"))
 
 
-def _sqlite_drop_cycles_table_if_present(conn) -> None:
+def _sqlite_rebuild_news_items_table_if_needed(conn) -> None:
+    exists = conn.execute(
+        text("SELECT 1 FROM sqlite_master WHERE type='table' AND name = :table_name"),
+        {"table_name": "news_items"},
+    ).fetchone()
+    if exists is None:
+        return
+
+    info = conn.execute(text("PRAGMA table_info(news_items)")).fetchall()
+    current_columns = {str(row[1]) for row in info}
+    if "topic_id" not in current_columns:
+        return
+
+    def _source_expr(column: str, fallback_sql: str) -> str:
+        return column if column in current_columns else fallback_sql
+
+    id_expr = _source_expr("id", "''")
+    title_expr = _source_expr("title", "''")
+    summary_expr = _source_expr("summary", "''")
+    opportunity_expr = _source_expr("opportunity", "''")
+    risk_expr = _source_expr("risk", "''")
+    tags_expr = _source_expr("tags_json", "'[]'")
+    status_expr = _source_expr("status", "'new'")
+    published_expr = _source_expr("published_at", "CURRENT_TIMESTAMP")
+    captured_expr = _source_expr("captured_at", "CURRENT_TIMESTAMP")
+    raw_payload_expr = _source_expr("raw_payload_json", "'{}'")
+    created_expr = _source_expr("created_at", "CURRENT_TIMESTAMP")
+    updated_expr = _source_expr("updated_at", "CURRENT_TIMESTAMP")
+
     conn.execute(text("PRAGMA foreign_keys=OFF"))
     try:
-        conn.execute(text("DROP TABLE IF EXISTS cycles"))
+        conn.execute(
+            text(
+                """
+                CREATE TABLE news_items__memlineage_new (
+                  id VARCHAR(40) PRIMARY KEY,
+                  title VARCHAR(200) NOT NULL,
+                  summary TEXT NOT NULL,
+                  opportunity TEXT NOT NULL,
+                  risk TEXT NOT NULL,
+                  tags_json JSON NOT NULL DEFAULT '[]',
+                  status VARCHAR(20) NOT NULL DEFAULT 'new',
+                  published_at TIMESTAMPTZ NOT NULL,
+                  captured_at TIMESTAMPTZ NOT NULL,
+                  raw_payload_json JSON NOT NULL DEFAULT '{}',
+                  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+                """
+            )
+        )
+        conn.execute(
+            text(
+                f"""
+                INSERT INTO news_items__memlineage_new (
+                  id, title, summary, opportunity, risk, tags_json, status,
+                  published_at, captured_at, raw_payload_json, created_at, updated_at
+                )
+                SELECT
+                  {id_expr},
+                  {title_expr},
+                  {summary_expr},
+                  {opportunity_expr},
+                  {risk_expr},
+                  {tags_expr},
+                  {status_expr},
+                  {published_expr},
+                  {captured_expr},
+                  {raw_payload_expr},
+                  {created_expr},
+                  {updated_expr}
+                FROM news_items
+                """
+            )
+        )
+        conn.execute(text("DROP TABLE news_items"))
+        conn.execute(text("ALTER TABLE news_items__memlineage_new RENAME TO news_items"))
     finally:
         conn.execute(text("PRAGMA foreign_keys=ON"))
+
+
+def _sqlite_drop_table_if_present(conn, table_name: str) -> None:
+    conn.execute(text("PRAGMA foreign_keys=OFF"))
+    try:
+        conn.execute(text(f"DROP TABLE IF EXISTS {table_name}"))
+    finally:
+        conn.execute(text("PRAGMA foreign_keys=ON"))
+
+
+def _sqlite_drop_cycles_table_if_present(conn) -> None:
+    _sqlite_drop_table_if_present(conn, "cycles")

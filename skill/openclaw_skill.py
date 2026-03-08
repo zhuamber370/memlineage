@@ -96,6 +96,12 @@ class KmsClient:
     def list_topics(self):
         return self._get("/api/v1/topics")
 
+    def list_news(self, **params):
+        return self._get("/api/v1/news", params=params)
+
+    def get_news(self, news_id: str):
+        return self._get(f"/api/v1/news/{news_id}")
+
     def list_journals(self, **params):
         return self._get("/api/v1/journals", params=params)
 
@@ -301,15 +307,102 @@ class KmsClient:
 
         return self.propose_changes(actions=[action], actor=actor, tool=tool)
 
-    def _default_topic_id(self) -> str:
-        topics = self.list_topics()
-        items = topics.get("items") or []
-        for item in items:
-            if item.get("id") == "top_fx_other":
-                return "top_fx_other"
-        if items:
-            return str(items[0]["id"])
-        raise RuntimeError("no active topics found")
+    def propose_capture_news_batch(
+        self,
+        *,
+        items: list[dict[str, Any]],
+        actor: dict[str, str],
+        tool: str = "openclaw-skill",
+    ):
+        if not items:
+            raise RuntimeError("items is required")
+
+        actions: list[dict[str, Any]] = []
+        for index, item in enumerate(items):
+            for key in (
+                "title",
+                "summary",
+                "opportunity",
+                "risk",
+                "primary_source_url",
+                "published_at",
+                "captured_at",
+            ):
+                if not item.get(key):
+                    raise RuntimeError(f"items[{index}].{key} is required")
+
+            sources = [{"role": "primary", "url": str(item["primary_source_url"])}]
+            for ref_url in item.get("reference_urls") or []:
+                if ref_url:
+                    sources.append({"role": "reference", "url": str(ref_url)})
+
+            payload: dict[str, Any] = {
+                "title": str(item["title"]),
+                "summary": str(item["summary"]),
+                "opportunity": str(item["opportunity"]),
+                "risk": str(item["risk"]),
+                "published_at": str(item["published_at"]),
+                "captured_at": str(item["captured_at"]),
+                "tags": list(item.get("tags") or []),
+                "sources": sources,
+                "raw_payload_json": dict(item.get("raw_payload_json") or {}),
+            }
+            actions.append({"type": "create_news", "payload": payload})
+
+        return self.propose_changes(actions=actions, actor=actor, tool=tool)
+
+    def propose_patch_news(
+        self,
+        *,
+        news_id: str,
+        actor: dict[str, str],
+        tool: str = "openclaw-skill",
+        **fields: Any,
+    ):
+        payload: dict[str, Any] = {"news_id": news_id}
+        for key in (
+            "title",
+            "summary",
+            "opportunity",
+            "risk",
+            "tags",
+            "status",
+            "published_at",
+            "captured_at",
+            "sources",
+            "raw_payload_json",
+        ):
+            if key in fields:
+                payload[key] = fields[key]
+        if len(payload) == 1:
+            raise RuntimeError("at least one patch field is required")
+        return self.propose_changes(actions=[{"type": "patch_news", "payload": payload}], actor=actor, tool=tool)
+
+    def propose_archive_news(
+        self,
+        *,
+        news_id: str,
+        actor: dict[str, str],
+        tool: str = "openclaw-skill",
+    ):
+        return self.propose_changes(
+            actions=[{"type": "archive_news", "payload": {"news_id": news_id}}],
+            actor=actor,
+            tool=tool,
+        )
+
+    def propose_delete_news(
+        self,
+        *,
+        news_id: str,
+        actor: dict[str, str],
+        tool: str = "openclaw-skill",
+    ):
+        return self.propose_changes(
+            actions=[{"type": "delete_news", "payload": {"news_id": news_id}}],
+            actor=actor,
+            tool=tool,
+        )
 
     def _find_active_task_by_title(self, title: str) -> Optional[dict[str, Any]]:
         listed = self.list_tasks(page=1, page_size=100, q=title)

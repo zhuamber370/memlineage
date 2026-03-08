@@ -433,6 +433,36 @@ const skill = {
         return client.getKnowledge(args.item_id);
       },
     },
+    list_news: {
+      description: "List news items",
+      parameters: {
+        type: "object",
+        properties: {
+          page: { type: "number", default: 1 },
+          page_size: { type: "number", default: 50 },
+          status: { type: "string", enum: ["new", "tracking", "actioned", "archived"] },
+          q: { type: "string" },
+        },
+      },
+      handler: async (args, context) => {
+        const client = createMemlineageClient(context);
+        return client.listNews(args || {});
+      },
+    },
+    get_news: {
+      description: "Get one news item detail",
+      parameters: {
+        type: "object",
+        properties: {
+          news_id: { type: "string" },
+        },
+        required: ["news_id"],
+      },
+      handler: async (args, context) => {
+        const client = createMemlineageClient(context);
+        return client.getNews(args.news_id);
+      },
+    },
     api_get: {
       description: "Fallback generic read-through for uncovered /api/v1/* endpoints",
       parameters: {
@@ -745,6 +775,123 @@ const skill = {
       handler: async (args, context) => {
         const client = createMemlineageClient(context);
         return client.proposeCreateKnowledge(args);
+      },
+    },
+    propose_capture_news_batch: {
+      description: "Dry-run capture a batch of structured news cards",
+      parameters: {
+        type: "object",
+        properties: {
+          items: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                title: { type: "string" },
+                summary: { type: "string" },
+                opportunity: { type: "string" },
+                risk: { type: "string" },
+                primary_source_url: { type: "string" },
+                reference_urls: {
+                  type: "array",
+                  items: { type: "string" },
+                },
+                published_at: { type: "string" },
+                captured_at: { type: "string" },
+                tags: {
+                  type: "array",
+                  items: { type: "string" },
+                },
+                raw_payload_json: {
+                  type: "object",
+                  additionalProperties: true,
+                },
+              },
+              required: [
+                "title",
+                "summary",
+                "opportunity",
+                "risk",
+                "primary_source_url",
+                "published_at",
+                "captured_at",
+              ],
+            },
+          },
+        },
+        required: ["items"],
+      },
+      handler: async (args, context) => {
+        const client = createMemlineageClient(context);
+        return client.proposeCaptureNewsBatch(args);
+      },
+    },
+    propose_patch_news: {
+      description: "Dry-run patch one news item",
+      parameters: {
+        type: "object",
+        properties: {
+          news_id: { type: "string" },
+          title: { type: "string" },
+          summary: { type: "string" },
+          opportunity: { type: "string" },
+          risk: { type: "string" },
+          tags: {
+            type: "array",
+            items: { type: "string" },
+          },
+          status: { type: "string", enum: ["new", "tracking", "actioned", "archived"] },
+          published_at: { type: "string" },
+          captured_at: { type: "string" },
+          sources: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                role: { type: "string", enum: ["primary", "reference"] },
+                url: { type: "string" },
+              },
+              required: ["role", "url"],
+            },
+          },
+          raw_payload_json: {
+            type: "object",
+            additionalProperties: true,
+          },
+        },
+        required: ["news_id"],
+      },
+      handler: async (args, context) => {
+        const client = createMemlineageClient(context);
+        return client.proposePatchNews(args);
+      },
+    },
+    propose_archive_news: {
+      description: "Dry-run archive one news item",
+      parameters: {
+        type: "object",
+        properties: {
+          news_id: { type: "string" },
+        },
+        required: ["news_id"],
+      },
+      handler: async (args, context) => {
+        const client = createMemlineageClient(context);
+        return client.proposeArchiveNews(args);
+      },
+    },
+    propose_delete_news: {
+      description: "Dry-run delete one news item",
+      parameters: {
+        type: "object",
+        properties: {
+          news_id: { type: "string" },
+        },
+        required: ["news_id"],
+      },
+      handler: async (args, context) => {
+        const client = createMemlineageClient(context);
+        return client.proposeDeleteNews(args);
       },
     },
     propose_patch_knowledge: {

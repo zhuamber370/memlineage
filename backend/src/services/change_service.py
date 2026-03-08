@@ -17,6 +17,8 @@ from src.models import (
     InboxItem,
     Journal,
     Link,
+    NewsItem,
+    NewsSource,
     NodeLog,
     Note,
     NoteSource,
@@ -38,6 +40,8 @@ from src.schemas import (
     KnowledgeCreate,
     KnowledgePatch,
     LinkCreate,
+    NewsCreate,
+    NewsPatch,
     NodeLogCreate,
     NoteAppend,
     NotePatch,
@@ -71,6 +75,7 @@ CREATE_ACTIONS = {
     "create_route_edge",
     "append_route_node_log",
     "create_knowledge",
+    "create_news",
     "capture_inbox",
 }
 
@@ -82,6 +87,9 @@ UPDATE_ACTIONS = {
     "patch_route",
     "patch_route_node",
     "patch_knowledge",
+    "patch_news",
+    "archive_news",
+    "delete_news",
     "archive_knowledge",
 }
 
@@ -209,6 +217,12 @@ class ChangeService:
             "knowledge_patch": 0,
             "knowledge_archive": 0,
             "knowledge_delete": 0,
+            "news_create": 0,
+            "news_patch": 0,
+            "news_archive": 0,
+            "news_delete": 0,
+            "news_promote_task": 0,
+            "news_promote_knowledge": 0,
             "link_create": 0,
             "link_delete": 0,
             "inbox_capture": 0,
@@ -254,6 +268,14 @@ class ChangeService:
                 summary["knowledge_archive"] += 1
             elif action.type == "delete_knowledge":
                 summary["knowledge_delete"] += 1
+            elif action.type == "create_news":
+                summary["news_create"] += 1
+            elif action.type == "patch_news":
+                summary["news_patch"] += 1
+            elif action.type == "archive_news":
+                summary["news_archive"] += 1
+            elif action.type == "delete_news":
+                summary["news_delete"] += 1
             elif action.type in {"link_entities", "create_link"}:
                 summary["link_create"] += 1
             elif action.type == "delete_link":
@@ -545,6 +567,40 @@ class ChangeService:
             if note is None:
                 raise ValueError("KNOWLEDGE_NOT_FOUND")
             return
+        if action_type == "create_news":
+            model = NewsCreate.model_validate(payload)
+            self._validate_news_sources(model.sources)
+            return
+        if action_type == "patch_news":
+            news_id = payload.get("news_id")
+            if not news_id:
+                raise ValueError("NEWS_ID_REQUIRED")
+            news = self.db.get(NewsItem, news_id)
+            if news is None:
+                raise ValueError("NEWS_NOT_FOUND")
+            patch_model = NewsPatch.model_validate({k: v for k, v in payload.items() if k != "news_id"})
+            patch_data = patch_model.model_dump(exclude_unset=True)
+            if not patch_data:
+                raise ValueError("NO_PATCH_FIELDS")
+            if "sources" in patch_data and patch_data["sources"] is not None:
+                self._validate_news_sources(patch_data["sources"])
+            return
+        if action_type == "archive_news":
+            news_id = payload.get("news_id")
+            if not news_id:
+                raise ValueError("NEWS_ID_REQUIRED")
+            news = self.db.get(NewsItem, news_id)
+            if news is None:
+                raise ValueError("NEWS_NOT_FOUND")
+            return
+        if action_type == "delete_news":
+            news_id = payload.get("news_id")
+            if not news_id:
+                raise ValueError("NEWS_ID_REQUIRED")
+            news = self.db.get(NewsItem, news_id)
+            if news is None:
+                raise ValueError("NEWS_NOT_FOUND")
+            return
         if action_type in {"create_link", "link_entities"}:
             LinkCreate.model_validate(payload)
             return
@@ -795,6 +851,10 @@ class ChangeService:
             "patch_knowledge",
             "archive_knowledge",
             "delete_knowledge",
+            "create_news",
+            "patch_news",
+            "archive_news",
+            "delete_news",
             "capture_inbox",
         }:
             fields = [k for k in payload.keys() if k not in {"id"}]
@@ -826,6 +886,10 @@ class ChangeService:
             "patch_knowledge": "knowledge",
             "archive_knowledge": "knowledge",
             "delete_knowledge": "knowledge",
+            "create_news": "news",
+            "patch_news": "news",
+            "archive_news": "news",
+            "delete_news": "news",
             "capture_inbox": "inbox",
         }
         action_map = {
@@ -852,6 +916,10 @@ class ChangeService:
             "patch_knowledge": "update",
             "archive_knowledge": "archive",
             "delete_knowledge": "delete",
+            "create_news": "create",
+            "patch_news": "update",
+            "archive_news": "archive",
+            "delete_news": "delete",
             "capture_inbox": "create",
         }
         fields = [k for k in payload.keys() if k not in {"id", "task_id", "note_id", "idea_id"}]
@@ -909,6 +977,14 @@ class ChangeService:
             return self._apply_archive_knowledge(payload)
         if action.action_type == "delete_knowledge":
             return self._apply_delete_knowledge(payload)
+        if action.action_type == "create_news":
+            return self._apply_create_news(payload)
+        if action.action_type == "patch_news":
+            return self._apply_patch_news(payload)
+        if action.action_type == "archive_news":
+            return self._apply_archive_news(payload)
+        if action.action_type == "delete_news":
+            return self._apply_delete_news(payload)
         if action.action_type == "capture_inbox":
             return self._apply_capture_inbox(payload)
         raise ValueError("CHANGE_ACTION_TYPE_UNSUPPORTED")
@@ -1731,6 +1807,165 @@ class ChangeService:
             "before_links": before_links,
         }
 
+    def _apply_create_news(self, payload: dict) -> dict:
+        model = NewsCreate.model_validate(payload)
+        self._validate_news_sources(model.sources)
+        news = NewsItem(
+            id=f"nws_{uuid.uuid4().hex[:12]}",
+            title=model.title,
+            summary=model.summary,
+            opportunity=model.opportunity,
+            risk=model.risk,
+            tags_json=model.tags,
+            status="new",
+            published_at=model.published_at,
+            captured_at=model.captured_at,
+            raw_payload_json=model.raw_payload_json,
+        )
+        self.db.add(news)
+        self.db.flush()
+        source_ids: list[str] = []
+        for source in model.sources:
+            source_id = f"nwsrc_{uuid.uuid4().hex[:12]}"
+            source_ids.append(source_id)
+            self.db.add(
+                NewsSource(
+                    id=source_id,
+                    news_id=news.id,
+                    role=source.role,
+                    url=source.url,
+                )
+            )
+        return {
+            "status": "applied",
+            "action_type": "create_news",
+            "entity": "news",
+            "entity_id": news.id,
+            "source_ids": source_ids,
+        }
+
+    def _apply_patch_news(self, payload: dict) -> dict:
+        news_id = payload.get("news_id")
+        if not news_id:
+            raise ValueError("NEWS_ID_REQUIRED")
+        news = self.db.get(NewsItem, news_id)
+        if news is None:
+            raise ValueError("NEWS_NOT_FOUND")
+
+        patch_model = NewsPatch.model_validate({k: v for k, v in payload.items() if k != "news_id"})
+        patch_data = patch_model.model_dump(exclude_unset=True)
+        if not patch_data:
+            raise ValueError("NO_PATCH_FIELDS")
+        if "sources" in patch_data and patch_data["sources"] is not None:
+            self._validate_news_sources(patch_data["sources"])
+
+        before = {
+            "title": news.title,
+            "summary": news.summary,
+            "opportunity": news.opportunity,
+            "risk": news.risk,
+            "tags_json": self._json_safe(news.tags_json or []),
+            "status": news.status,
+            "published_at": self._json_safe(news.published_at),
+            "captured_at": self._json_safe(news.captured_at),
+            "raw_payload_json": self._json_safe(news.raw_payload_json or {}),
+        }
+        before_sources = [
+            {
+                "id": src.id,
+                "role": src.role,
+                "url": src.url,
+            }
+            for src in self.db.scalars(select(NewsSource).where(NewsSource.news_id == news.id))
+        ]
+
+        sources = patch_data.pop("sources", None)
+        tags = patch_data.pop("tags", None)
+        if tags is not None:
+            news.tags_json = tags
+        for key, value in patch_data.items():
+            setattr(news, key, value)
+        self.db.add(news)
+        if sources is not None:
+            self.db.execute(delete(NewsSource).where(NewsSource.news_id == news.id))
+            for source in sources:
+                role = source["role"] if isinstance(source, dict) else source.role
+                url = source["url"] if isinstance(source, dict) else source.url
+                self.db.add(
+                    NewsSource(
+                        id=f"nwsrc_{uuid.uuid4().hex[:12]}",
+                        news_id=news.id,
+                        role=role,
+                        url=url,
+                    )
+                )
+        return {
+            "status": "applied",
+            "action_type": "patch_news",
+            "entity": "news",
+            "entity_id": news.id,
+            "before": before,
+            "before_sources": before_sources,
+        }
+
+    def _apply_archive_news(self, payload: dict) -> dict:
+        news_id = payload.get("news_id")
+        if not news_id:
+            raise ValueError("NEWS_ID_REQUIRED")
+        news = self.db.get(NewsItem, news_id)
+        if news is None:
+            raise ValueError("NEWS_NOT_FOUND")
+        before_status = news.status
+        changed = news.status != "archived"
+        if changed:
+            news.status = "archived"
+            self.db.add(news)
+        return {
+            "status": "applied",
+            "action_type": "archive_news",
+            "entity": "news",
+            "entity_id": news.id,
+            "before_status": before_status,
+            "after_status": news.status,
+            "changed": changed,
+        }
+
+    def _apply_delete_news(self, payload: dict) -> dict:
+        news_id = payload.get("news_id")
+        if not news_id:
+            raise ValueError("NEWS_ID_REQUIRED")
+        news = self.db.get(NewsItem, news_id)
+        if news is None:
+            raise ValueError("NEWS_NOT_FOUND")
+
+        before_news = {
+            "id": news.id,
+            "title": news.title,
+            "summary": news.summary,
+            "opportunity": news.opportunity,
+            "risk": news.risk,
+            "tags_json": self._json_safe(news.tags_json or []),
+            "status": news.status,
+            "published_at": self._json_safe(news.published_at),
+            "captured_at": self._json_safe(news.captured_at),
+            "raw_payload_json": self._json_safe(news.raw_payload_json or {}),
+            "created_at": self._json_safe(news.created_at),
+            "updated_at": self._json_safe(news.updated_at),
+        }
+        before_sources = [
+            {"id": src.id, "role": src.role, "url": src.url}
+            for src in self.db.scalars(select(NewsSource).where(NewsSource.news_id == news.id))
+        ]
+        self.db.delete(news)
+        return {
+            "status": "applied",
+            "action_type": "delete_news",
+            "entity": "news",
+            "entity_id": news.id,
+            "before_news": before_news,
+            "before_sources": before_sources,
+        }
+
     def _apply_capture_inbox(self, payload: dict) -> dict:
         model = InboxCapture.model_validate(payload)
         item = InboxItem(
@@ -1819,6 +2054,18 @@ class ChangeService:
             return
         if action_type == "delete_knowledge":
             self._rollback_delete_knowledge(result)
+            return
+        if action_type == "create_news":
+            self._rollback_create_news(result)
+            return
+        if action_type == "patch_news":
+            self._rollback_patch_news(result)
+            return
+        if action_type == "archive_news":
+            self._rollback_archive_news(result)
+            return
+        if action_type == "delete_news":
+            self._rollback_delete_news(result)
             return
         if action_type == "capture_inbox":
             self._rollback_capture_inbox(result)
@@ -2188,6 +2435,71 @@ class ChangeService:
                     )
                 )
 
+    def _rollback_create_news(self, result: dict) -> None:
+        news_id = result.get("entity_id")
+        if not isinstance(news_id, str) or not news_id:
+            raise ValueError("CHANGE_ACTION_RESULT_MISSING_ENTITY_ID")
+        news = self.db.get(NewsItem, news_id)
+        if news:
+            self.db.delete(news)
+
+    def _rollback_patch_news(self, result: dict) -> None:
+        news_id = result.get("entity_id")
+        if not isinstance(news_id, str) or not news_id:
+            raise ValueError("CHANGE_ACTION_RESULT_MISSING_ENTITY_ID")
+        news = self.db.get(NewsItem, news_id)
+        if news is None:
+            raise ValueError("NEWS_NOT_FOUND")
+        before = result.get("before")
+        if not isinstance(before, dict):
+            raise ValueError("CHANGE_ACTION_RESULT_MISSING_BEFORE")
+        for key, value in before.items():
+            setattr(news, key, self._news_value_from_json(key, value))
+        self.db.add(news)
+        before_sources = result.get("before_sources")
+        if isinstance(before_sources, list):
+            self.db.execute(delete(NewsSource).where(NewsSource.news_id == news_id))
+            self._restore_news_sources(news_id, before_sources)
+
+    def _rollback_archive_news(self, result: dict) -> None:
+        news_id = result.get("entity_id")
+        if not isinstance(news_id, str) or not news_id:
+            raise ValueError("CHANGE_ACTION_RESULT_MISSING_ENTITY_ID")
+        news = self.db.get(NewsItem, news_id)
+        if news is None:
+            raise ValueError("NEWS_NOT_FOUND")
+        before_status = result.get("before_status")
+        if isinstance(before_status, str) and before_status:
+            news.status = before_status
+            self.db.add(news)
+
+    def _rollback_delete_news(self, result: dict) -> None:
+        before_news = result.get("before_news")
+        if not isinstance(before_news, dict):
+            raise ValueError("CHANGE_ACTION_RESULT_MISSING_BEFORE")
+        news_id = before_news.get("id")
+        if not isinstance(news_id, str) or not news_id:
+            raise ValueError("CHANGE_ACTION_RESULT_MISSING_ENTITY_ID")
+        if self.db.get(NewsItem, news_id) is None:
+            news = NewsItem(
+                id=news_id,
+                title=str(before_news.get("title") or ""),
+                summary=str(before_news.get("summary") or ""),
+                opportunity=str(before_news.get("opportunity") or ""),
+                risk=str(before_news.get("risk") or ""),
+                tags_json=list(before_news.get("tags_json") or []),
+                status=str(before_news.get("status") or "new"),
+                published_at=self._datetime_from_json(before_news.get("published_at")),
+                captured_at=self._datetime_from_json(before_news.get("captured_at")),
+                raw_payload_json=dict(before_news.get("raw_payload_json") or {}),
+                created_at=self._datetime_from_json(before_news.get("created_at")),
+                updated_at=self._datetime_from_json(before_news.get("updated_at")),
+            )
+            self.db.add(news)
+        before_sources = result.get("before_sources")
+        if isinstance(before_sources, list):
+            self._restore_news_sources(news_id, before_sources)
+
     def _rollback_capture_inbox(self, result: dict) -> None:
         inbox_id = result.get("entity_id")
         if not isinstance(inbox_id, str) or not inbox_id:
@@ -2243,6 +2555,55 @@ class ChangeService:
             return {str(k): self._json_safe(v) for k, v in value.items()}
         return value
 
+    def _news_value_from_json(self, key: str, value: Any) -> Any:
+        if value is None:
+            return None
+        if key in {"published_at", "captured_at", "created_at", "updated_at"}:
+            return self._datetime_from_json(value)
+        return value
+
+    def _validate_news_sources(self, sources: Any) -> None:
+        if not isinstance(sources, list) or not sources:
+            raise ValueError("NEWS_SOURCES_REQUIRED")
+        primary_count = 0
+        for source in sources:
+            if isinstance(source, dict):
+                role = source.get("role")
+            else:
+                role = getattr(source, "role", None)
+            if role == "primary":
+                primary_count += 1
+        if primary_count != 1:
+            raise ValueError("NEWS_PRIMARY_SOURCE_REQUIRED")
+
+    def _restore_news_sources(self, news_id: str, sources: list[Any]) -> None:
+        for source in sources:
+            if not isinstance(source, dict):
+                continue
+            source_id = source.get("id")
+            if not isinstance(source_id, str) or not source_id:
+                continue
+            if self.db.get(NewsSource, source_id) is not None:
+                continue
+            self.db.add(
+                NewsSource(
+                    id=source_id,
+                    news_id=news_id,
+                    role=str(source.get("role") or "reference"),
+                    url=str(source.get("url") or ""),
+                )
+            )
+
+    def _extract_news_source_refs(self, news_id: Any) -> list[str]:
+        if not isinstance(news_id, str) or not news_id:
+            return []
+        return [
+            source.url
+            for source in self.db.scalars(
+                select(NewsSource).where(NewsSource.news_id == news_id).order_by(NewsSource.role.asc(), NewsSource.id.asc())
+            )
+        ]
+
     def _extract_source_refs(self, action_type: str, payload: dict) -> list[str]:
         if action_type == "create_task":
             source = payload.get("source")
@@ -2274,6 +2635,25 @@ class ChangeService:
         if action_type == "append_route_node_log":
             source = payload.get("source_ref")
             return [str(source)] if source else []
+        if action_type == "create_news":
+            sources = payload.get("sources")
+            if not isinstance(sources, list):
+                return []
+            refs: list[str] = []
+            for source in sources:
+                if isinstance(source, dict) and source.get("url"):
+                    refs.append(str(source["url"]))
+            return refs
+        if action_type == "patch_news":
+            sources = payload.get("sources")
+            if isinstance(sources, list):
+                refs: list[str] = []
+                for source in sources:
+                    if isinstance(source, dict) and source.get("url"):
+                        refs.append(str(source["url"]))
+                return refs
+            news_id = payload.get("news_id")
+            return self._extract_news_source_refs(news_id)
         if action_type == "capture_inbox":
             source = payload.get("source")
             return [str(source)] if source else []

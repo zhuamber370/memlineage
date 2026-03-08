@@ -313,6 +313,15 @@ function createMemlineageClient(context) {
     return get(`/api/v1/knowledge/${itemId}`, {});
   }
 
+  async function listNews(params) {
+    return get("/api/v1/news", params || {});
+  }
+
+  async function getNews(newsId) {
+    if (!newsId) throw new Error("news_id is required");
+    return get(`/api/v1/news/${newsId}`, {});
+  }
+
   async function getContextBundle(params) {
     return get("/api/v1/context/bundle", params || {});
   }
@@ -866,6 +875,77 @@ function createMemlineageClient(context) {
     return proposeSingle("create_knowledge", payload, args);
   }
 
+  async function proposeCaptureNewsBatch(args) {
+    const items = Array.isArray(args && args.items) ? args.items : [];
+    if (!items.length) throw new Error("items is required");
+    const actions = items.map((item, index) => {
+      if (!item || typeof item !== "object") throw new Error(`items[${index}] must be an object`);
+      if (!item.title) throw new Error(`items[${index}].title is required`);
+      if (!item.summary) throw new Error(`items[${index}].summary is required`);
+      if (!item.opportunity) throw new Error(`items[${index}].opportunity is required`);
+      if (!item.risk) throw new Error(`items[${index}].risk is required`);
+      if (!item.primary_source_url) throw new Error(`items[${index}].primary_source_url is required`);
+      if (!item.published_at) throw new Error(`items[${index}].published_at is required`);
+      if (!item.captured_at) throw new Error(`items[${index}].captured_at is required`);
+
+      const sources = [{ role: "primary", url: item.primary_source_url }];
+      const referenceUrls = Array.isArray(item.reference_urls) ? item.reference_urls : [];
+      for (const refUrl of referenceUrls) {
+        if (refUrl) sources.push({ role: "reference", url: refUrl });
+      }
+
+      const payload = {
+        title: item.title,
+        summary: item.summary,
+        opportunity: item.opportunity,
+        risk: item.risk,
+        published_at: item.published_at,
+        captured_at: item.captured_at,
+        tags: Array.isArray(item.tags) ? item.tags : [],
+        sources,
+        raw_payload_json:
+          item.raw_payload_json && typeof item.raw_payload_json === "object" ? item.raw_payload_json : {},
+      };
+      return { type: "create_news", payload };
+    });
+    return proposeChanges(
+      actions,
+      (args && args.actor) || { type: "agent", id: actorId },
+      (args && args.tool) || "openclaw-skill"
+    );
+  }
+
+  async function proposePatchNews(args) {
+    if (!args.news_id) throw new Error("news_id is required");
+    const payload = { news_id: args.news_id };
+    for (const key of [
+      "title",
+      "summary",
+      "opportunity",
+      "risk",
+      "tags",
+      "status",
+      "published_at",
+      "captured_at",
+      "sources",
+      "raw_payload_json",
+    ]) {
+      if (Object.prototype.hasOwnProperty.call(args, key)) payload[key] = args[key];
+    }
+    if (Object.keys(payload).length <= 1) throw new Error("at least one patch field is required");
+    return proposeSingle("patch_news", payload, args);
+  }
+
+  async function proposeArchiveNews(args) {
+    if (!args.news_id) throw new Error("news_id is required");
+    return proposeSingle("archive_news", { news_id: args.news_id }, args);
+  }
+
+  async function proposeDeleteNews(args) {
+    if (!args.news_id) throw new Error("news_id is required");
+    return proposeSingle("delete_news", { news_id: args.news_id }, args);
+  }
+
   async function proposePatchKnowledge(args) {
     if (!args.item_id) throw new Error("item_id is required");
     const payload = { item_id: args.item_id };
@@ -934,6 +1014,8 @@ function createMemlineageClient(context) {
     getInbox,
     listKnowledge,
     getKnowledge,
+    listNews,
+    getNews,
     getContextBundle,
     proposeChanges,
     commitChanges,
@@ -955,6 +1037,10 @@ function createMemlineageClient(context) {
     proposeDeleteRouteEdge,
     proposeAppendRouteNodeLog,
     proposeCreateKnowledge,
+    proposeCaptureNewsBatch,
+    proposePatchNews,
+    proposeArchiveNews,
+    proposeDeleteNews,
     proposePatchKnowledge,
     proposeArchiveKnowledge,
     proposeDeleteKnowledge,

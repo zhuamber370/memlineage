@@ -11,6 +11,8 @@ test("memlineage skill exposes comprehensive read actions", () => {
   const expected = [
     "list_topics",
     "list_ideas",
+    "list_news",
+    "get_news",
     "list_changes",
     "get_change",
     "list_audit_events",
@@ -28,6 +30,10 @@ test("memlineage skill exposes comprehensive read actions", () => {
     "propose_create_route",
     "propose_create_route_node",
     "propose_create_knowledge",
+    "propose_capture_news_batch",
+    "propose_patch_news",
+    "propose_archive_news",
+    "propose_delete_news",
     "propose_create_link",
     "propose_capture_inbox",
     "api_get",
@@ -202,6 +208,95 @@ test("getTaskExecutionSnapshot returns disambiguation candidates when task query
     assert.equal(out.task_id, null);
     assert.equal(out.selected_route_id, null);
     assert.equal(out.task_resolution.candidates.length, 2);
+  } finally {
+    process.env.KMS_BASE_URL = oldBaseUrl;
+    process.env.KMS_API_KEY = oldApiKey;
+    global.fetch = oldFetch;
+  }
+});
+
+test("news skill actions expose batch capture and maintenance contract", () => {
+  const actions = skill.actions;
+  assert.ok(actions.list_news);
+  assert.ok(actions.get_news);
+  assert.ok(actions.propose_capture_news_batch);
+  assert.ok(actions.propose_patch_news);
+  assert.ok(actions.propose_archive_news);
+  assert.ok(actions.propose_delete_news);
+  assert.ok(!actions.propose_promote_news_to_task);
+  assert.ok(!actions.propose_promote_news_to_knowledge);
+
+  assert.ok(!Object.prototype.hasOwnProperty.call(actions.list_news.parameters.properties, "topic_id"));
+
+  const batchItems = actions.propose_capture_news_batch.parameters.properties.items;
+  assert.equal(batchItems.type, "array");
+  assert.ok(batchItems.items);
+  assert.ok(batchItems.items.properties.primary_source_url);
+  assert.ok(batchItems.items.properties.reference_urls);
+  assert.ok(batchItems.items.properties.raw_payload_json);
+  assert.ok(!batchItems.items.properties.topic_id);
+
+  const patchProps = actions.propose_patch_news.parameters.properties;
+  assert.ok(!Object.prototype.hasOwnProperty.call(patchProps, "topic_id"));
+});
+
+test("proposeCaptureNewsBatch expands into one dry-run with multiple create_news actions", async () => {
+  const oldBaseUrl = process.env.KMS_BASE_URL;
+  const oldApiKey = process.env.KMS_API_KEY;
+  const oldFetch = global.fetch;
+
+  process.env.KMS_BASE_URL = "http://127.0.0.1:8000";
+  process.env.KMS_API_KEY = "test-key";
+
+  let body = null;
+  global.fetch = async (_url, options) => {
+    body = JSON.parse(String(options && options.body));
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ change_set_id: "chg_news_batch" }),
+      text: async () => "",
+    };
+  };
+
+  try {
+    const client = createMemlineageClient({});
+    const out = await client.proposeCaptureNewsBatch({
+      items: [
+        {
+          title: "news A",
+          summary: "summary A",
+          opportunity: "opp A",
+          risk: "risk A",
+          primary_source_url: "https://example.com/a",
+          reference_urls: ["https://example.com/a-2"],
+          published_at: "2026-03-07T10:00:00Z",
+          captured_at: "2026-03-08T08:00:00Z",
+          tags: ["ai"],
+          raw_payload_json: { id: "a" },
+        },
+        {
+          title: "news B",
+          summary: "summary B",
+          opportunity: "opp B",
+          risk: "risk B",
+          primary_source_url: "https://example.com/b",
+          reference_urls: [],
+          published_at: "2026-03-07T11:00:00Z",
+          captured_at: "2026-03-08T08:05:00Z",
+          tags: ["agents"],
+          raw_payload_json: { id: "b" },
+        },
+      ],
+    });
+
+    assert.equal(out.change_set_id, "chg_news_batch");
+    assert.equal(body.actions.length, 2);
+    assert.equal(body.actions[0].type, "create_news");
+    assert.equal(body.actions[1].type, "create_news");
+    assert.equal(body.actions[0].payload.sources[0].role, "primary");
+    assert.equal(body.actions[0].payload.sources[1].role, "reference");
+    assert.ok(!Object.prototype.hasOwnProperty.call(body.actions[1].payload, "topic_id"));
   } finally {
     process.env.KMS_BASE_URL = oldBaseUrl;
     process.env.KMS_API_KEY = oldApiKey;

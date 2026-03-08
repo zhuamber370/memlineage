@@ -75,6 +75,10 @@ All agent writes should use governed write flow:
 - `patch_knowledge`
 - `archive_knowledge`
 - `delete_knowledge`
+- `create_news`
+- `patch_news`
+- `archive_news`
+- `delete_news`
 - `create_link`
 - `delete_link`
 - `capture_inbox`
@@ -94,6 +98,13 @@ All agent writes should use governed write flow:
 - `create_knowledge`, `patch_knowledge`, `archive_knowledge`, `delete_knowledge`
 - Knowledge is currently note-backed in runtime.
 - Valid categories: `ops_manual | mechanism_spec | decision_record`.
+
+### News
+- `create_news`, `patch_news`, `archive_news`, `delete_news`
+- News is a dedicated runtime domain backed by `news_items + news_sources`.
+- Each news item stores one primary source and optional reference sources.
+- News does not carry `topic_id` and does not support downstream promotion/linkage.
+- First release does not deduplicate repeated events across batches.
 
 ### Idea + route graph
 - `create_idea`, `patch_idea`, `promote_idea`

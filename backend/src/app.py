@@ -18,6 +18,7 @@ from src.routes.inbox import build_router as build_inbox_router
 from src.routes.journals import build_router as build_journals_router
 from src.routes.knowledge import build_router as build_knowledge_router
 from src.routes.links import build_router as build_links_router
+from src.routes.news import build_router as build_news_router
 from src.routes.notes import build_router as build_notes_router
 from src.routes.routes import build_router as build_routes_router
 from src.routes.skills import build_router as build_skills_router
@@ -70,6 +71,7 @@ def create_app(
     app.include_router(build_topics_router(get_db_dep))
     app.include_router(build_journals_router(get_db_dep))
     app.include_router(build_knowledge_router(get_db_dep))
+    app.include_router(build_news_router(get_db_dep))
     app.include_router(build_inbox_router(get_db_dep))
     app.include_router(build_notes_router(get_db_dep))
     app.include_router(build_links_router(get_db_dep))

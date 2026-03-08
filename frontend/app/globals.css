@@ -2192,6 +2192,84 @@ a {
   gap: 8px;
 }
 
+.newsBoard {
+  display: grid;
+  gap: 12px;
+  background:
+    radial-gradient(800px 200px at 4% -18%, #e6f4ff 0%, transparent 64%),
+    radial-gradient(900px 220px at 100% -24%, #fff0da 0%, transparent 68%),
+    var(--panel);
+}
+
+.newsHero {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.newsHeroFilters {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(150px, 180px) minmax(180px, 220px);
+  gap: 8px;
+}
+
+.newsNoticeBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  border: 2px dashed var(--line);
+  border-radius: 12px;
+  background: #fffdf7;
+  padding: 10px;
+}
+
+.newsLayout {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.82fr) minmax(0, 1.18fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.newsListPanel {
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  padding: 10px;
+}
+
+.newsList {
+  display: grid;
+  gap: 8px;
+  max-height: 78vh;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.newsRowMeta {
+  color: var(--muted);
+  font-size: 0.8rem;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.newsJsonField {
+  font-family: "IBM Plex Mono", "Courier New", monospace;
+  font-size: 0.82rem;
+}
+
+.newsListRow {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+
+.newsListDeleteButton {
+  align-self: center;
+}
+
 .ideasBoard {
   display: grid;
   gap: 12px;
@@ -2632,7 +2710,16 @@ a {
     flex-direction: column;
   }
 
+  .newsHero {
+    flex-direction: column;
+  }
+
   .knowledgeHeroFilters {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .newsHeroFilters {
     grid-template-columns: 1fr;
     width: 100%;
   }
@@ -2646,6 +2733,10 @@ a {
   }
 
   .knowledgeLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .newsLayout {
     grid-template-columns: 1fr;
   }
 
