@@ -1,5 +1,5 @@
 > Documentation Status: Current
-> Last synced: 2026-03-04
+> Last synced: 2026-03-08
 
 # MVP Release Notes (Synced 2026-03-04)
 
@@ -24,7 +24,7 @@
   - task execution panel simplification:
     - add-step inline form now keeps only title + status
 - Home Dashboard (`/`) for personal overview:
-  - global snapshot + `Task / Knowledge` board layout
+  - global snapshot + `Task / Knowledge / News` board layout
   - pending change proposals are surfaced as a left-sidebar `Changes` badge reminder
   - `Database Safety` card supports local backup download and local-file restore overwrite flow
   - focus task ranking rule: `P0 + in_progress` first, then due date, then latest update, then title tie-break
@@ -33,6 +33,7 @@
   - post-release stabilization (2026-03-02): fixed `Open Studio` task selection race and stale DAG data replay under rapid task switching/deep-link navigation
   - post-release UX sync (2026-03-04): removed duplicated home changes panel and fixed immediate sidebar count refresh after commit/reject/undo
   - db safety sync (2026-03-04): direct restore is explicit overwrite-only and requires user confirmation
+  - news sync (2026-03-08): global snapshot now includes `News Total`, home main row is rebalanced into `Task / Knowledge / News`, and `/news` supports single-day published-date filtering with `Today / Previous Day / Next Day` shortcuts
 - Knowledge workspace using `/api/v1/knowledge`:
   - category model: `ops_manual | mechanism_spec | decision_record`
   - status model: `active | archived`

@@ -80,7 +80,7 @@ function TasksPageInner() {
   const [createTopicId, setCreateTopicId] = useState("");
 
   const [filterPriority, setFilterPriority] = useState<FilterPriority>("all");
-  const [filterStatus, setFilterStatus] = useState<FilterStatus>("in_progress");
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
   const [filterTopicId, setFilterTopicId] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import delete, func, or_, select
@@ -54,6 +55,8 @@ class NewsService:
         page_size: int,
         status: Optional[str] = None,
         q: Optional[str] = None,
+        published_from: Optional[datetime] = None,
+        published_to: Optional[datetime] = None,
     ) -> tuple[list[dict], int]:
         stmt = select(NewsItem)
         count_stmt = select(func.count()).select_from(NewsItem)
@@ -70,6 +73,12 @@ class NewsService:
             )
             stmt = stmt.where(filter_clause)
             count_stmt = count_stmt.where(filter_clause)
+        if published_from is not None:
+            stmt = stmt.where(NewsItem.published_at >= published_from)
+            count_stmt = count_stmt.where(NewsItem.published_at >= published_from)
+        if published_to is not None:
+            stmt = stmt.where(NewsItem.published_at < published_to)
+            count_stmt = count_stmt.where(NewsItem.published_at < published_to)
 
         stmt = (
             stmt.order_by(NewsItem.captured_at.desc(), NewsItem.created_at.desc())

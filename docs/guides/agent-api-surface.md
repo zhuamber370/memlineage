@@ -104,6 +104,7 @@ All agent writes should use governed write flow:
 - News is a dedicated runtime domain backed by `news_items + news_sources`.
 - Each news item stores one primary source and optional reference sources.
 - News does not carry `topic_id` and does not support downstream promotion/linkage.
+- `GET /api/v1/news` supports `status`, `q`, `published_from`, and `published_to` for list filtering.
 - First release does not deduplicate repeated events across batches.
 
 ### Idea + route graph

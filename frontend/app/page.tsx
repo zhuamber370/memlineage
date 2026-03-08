@@ -9,12 +9,14 @@ import {
   buildHomeSnapshot,
   type ChangeSummary,
   type KnowledgeSummary,
+  type NewsSummary,
   type TaskSummary
 } from "../src/lib/home-dashboard";
 import { useI18n } from "../src/i18n";
 
 type TaskListResp = { items: TaskSummary[] };
 type KnowledgeListResp = { items: KnowledgeSummary[] };
+type NewsListResp = { items: NewsSummary[] };
 type ChangeListResp = { items: ChangeSummary[] };
 type ChartDatum = { label: string; value: number };
 
@@ -22,6 +24,15 @@ function formatFileSize(size: number): string {
   if (size < 1024) return `${size} B`;
   if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
   return `${(size / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+function hostnameOf(url?: string | null): string {
+  if (!url) return "-";
+  try {
+    return new URL(url).hostname || url;
+  } catch {
+    return url;
+  }
 }
 
 function HomeBarChart({
@@ -61,12 +72,15 @@ export default function HomeDashboardPage() {
   const { t, lang } = useI18n();
   const [tasks, setTasks] = useState<TaskSummary[]>([]);
   const [knowledge, setKnowledge] = useState<KnowledgeSummary[]>([]);
+  const [news, setNews] = useState<NewsSummary[]>([]);
   const [changes, setChanges] = useState<ChangeSummary[]>([]);
   const [tasksLoading, setTasksLoading] = useState(false);
   const [knowledgeLoading, setKnowledgeLoading] = useState(false);
+  const [newsLoading, setNewsLoading] = useState(false);
   const [changesLoading, setChangesLoading] = useState(false);
   const [tasksError, setTasksError] = useState("");
   const [knowledgeError, setKnowledgeError] = useState("");
+  const [newsError, setNewsError] = useState("");
   const [backupPending, setBackupPending] = useState(false);
   const [backupNotice, setBackupNotice] = useState("");
   const [backupError, setBackupError] = useState("");
@@ -77,7 +91,7 @@ export default function HomeDashboardPage() {
   const [restoreError, setRestoreError] = useState("");
   const [restorePickerKey, setRestorePickerKey] = useState(0);
 
-  const snapshot = useMemo(() => buildHomeSnapshot({ tasks, knowledge, changes }), [tasks, knowledge, changes]);
+  const snapshot = useMemo(() => buildHomeSnapshot({ tasks, knowledge, news, changes }), [tasks, knowledge, news, changes]);
   const categoryEntries = useMemo(
     () => Object.entries(snapshot.knowledge.byCategory).sort(([a], [b]) => a.localeCompare(b)),
     [snapshot.knowledge.byCategory]
@@ -134,13 +148,16 @@ export default function HomeDashboardPage() {
   async function loadHomeData() {
     setTasksLoading(true);
     setKnowledgeLoading(true);
+    setNewsLoading(true);
     setChangesLoading(true);
     setTasksError("");
     setKnowledgeError("");
+    setNewsError("");
 
-    const [taskRes, knowledgeRes, changeRes] = await Promise.allSettled([
+    const [taskRes, knowledgeRes, newsRes, changeRes] = await Promise.allSettled([
       apiGet<TaskListResp>("/api/v1/tasks?page=1&page_size=100"),
       apiGet<KnowledgeListResp>("/api/v1/knowledge?page=1&page_size=100&status=active"),
+      apiGet<NewsListResp>("/api/v1/news?page=1&page_size=100"),
       apiGet<ChangeListResp>("/api/v1/changes?page=1&page_size=100")
     ]);
 
@@ -159,6 +176,14 @@ export default function HomeDashboardPage() {
       setKnowledgeError(messageFromError(knowledgeRes.reason));
     }
     setKnowledgeLoading(false);
+
+    if (newsRes.status === "fulfilled") {
+      setNews(newsRes.value.items ?? []);
+    } else {
+      setNews([]);
+      setNewsError(messageFromError(newsRes.reason));
+    }
+    setNewsLoading(false);
 
     if (changeRes.status === "fulfilled") {
       setChanges(changeRes.value.items ?? []);
@@ -239,7 +264,11 @@ export default function HomeDashboardPage() {
     return `/tasks?${params.toString()}`;
   }
 
-  const isAnyLoading = tasksLoading || knowledgeLoading || changesLoading;
+  function newsDetailLink(_newsItem: NewsSummary): string {
+    return "/news";
+  }
+
+  const isAnyLoading = tasksLoading || knowledgeLoading || newsLoading || changesLoading;
 
   return (
     <section className="homeDashboard">
@@ -276,6 +305,10 @@ export default function HomeDashboardPage() {
             <Link href="/knowledge?status=active" className="homeMetricCard">
               <div className="changesSummaryKey">{t("home.global.knowledgeTotal")}</div>
               <div className="changesSummaryValue">{snapshot.global.knowledgeTotal}</div>
+            </Link>
+            <Link href="/news" className="homeMetricCard">
+              <div className="changesSummaryKey">{t("home.global.newsTotal")}</div>
+              <div className="changesSummaryValue">{snapshot.global.newsTotal}</div>
             </Link>
           </div>
           <div className="homeChartGrid">
@@ -380,7 +413,71 @@ export default function HomeDashboardPage() {
           </div>
         </section>
 
-        <section className="card homePanel homePanelWide homeDbSafety">
+        <section className="card homePanel homePanelNews">
+          <div className="homePanelHead">
+            <h2 className="changesSubTitle">{t("home.news.title")}</h2>
+            <Link href="/news" className="badge">
+              {t("home.news.openNews")}
+            </Link>
+          </div>
+          <div className="changesSummaryGrid">
+            <div className="changesSummaryCard">
+              <div className="changesSummaryKey">{t("home.news.total")}</div>
+              <div className="changesSummaryValue">{snapshot.global.newsTotal}</div>
+            </div>
+            <div className="changesSummaryCard">
+              <div className="changesSummaryKey">{t("home.news.newCount")}</div>
+              <div className="changesSummaryValue">{snapshot.news.statusCounts.new ?? 0}</div>
+            </div>
+            <div className="changesSummaryCard">
+              <div className="changesSummaryKey">{t("home.news.trackingCount")}</div>
+              <div className="changesSummaryValue">{snapshot.news.statusCounts.tracking ?? 0}</div>
+            </div>
+            <div className="changesSummaryCard">
+              <div className="changesSummaryKey">{t("home.news.actionedCount")}</div>
+              <div className="changesSummaryValue">{snapshot.news.statusCounts.actioned ?? 0}</div>
+            </div>
+          </div>
+          <h3 className="changesGroupTitle">{t("home.news.recentTitle")}</h3>
+          <div className="homeList homeFocusList homeNewsList">
+            {newsLoading ? (
+              <p className="meta">{t("home.loading")}</p>
+            ) : newsError ? (
+              <p className="meta" style={{ color: "var(--danger)" }}>
+                {t("home.error")}: {newsError}
+              </p>
+            ) : snapshot.news.recent.length ? (
+              snapshot.news.recent.map((item) => {
+                const primarySource = item.sources.find((source) => source.role === "primary")?.url || "";
+                return (
+                  <article key={item.id} className="homeFocusItem homeNewsItem">
+                    <div className="homeNewsItemMain">
+                      <div className="homeNewsTitle">
+                        <Link href={newsDetailLink(item)} className="homeInlineLink">
+                          {item.title}
+                        </Link>
+                      </div>
+                      <div className="newsRowMeta homeNewsMeta">
+                        <span>{t(`news.status.${item.status}`)}</span>
+                        <span>{t("news.publishedAt")}: {formatDate(item.published_at, lang)}</span>
+                        <span>{hostnameOf(primarySource)}</span>
+                      </div>
+                    </div>
+                    <div className="homeFocusActions">
+                      <Link href={newsDetailLink(item)} className="badge">
+                        {t("home.news.openDetail")}
+                      </Link>
+                    </div>
+                  </article>
+                );
+              })
+            ) : (
+              <p className="meta">{t("home.news.empty")}</p>
+            )}
+          </div>
+        </section>
+
+        <section className="card homePanel homeDbSafety">
           <h2 className="changesSubTitle">{t("home.dbSafety.title")}</h2>
           <p className="meta">{t("home.dbSafety.subtitle")}</p>
 

@@ -91,6 +91,63 @@ def test_list_news_filters_by_status_and_query_only():
     assert archived_items[0]["id"] == archive_me.json()["id"]
 
 
+def test_list_news_filters_by_published_day_and_combines_with_status_and_query():
+    client = make_client()
+    shared_query = uniq("news_date_filter")
+
+    on_day = client.post(
+        "/api/v1/news",
+        json=_payload(
+            uniq("news_day_match"),
+            title=f"OpenAI news {shared_query} keep",
+            summary=f"summary {shared_query}",
+            published_at="2026-03-07T10:00:00Z",
+            captured_at="2026-03-08T08:00:00Z",
+        ),
+    )
+    off_day = client.post(
+        "/api/v1/news",
+        json=_payload(
+            uniq("news_day_skip"),
+            title=f"OpenAI news {shared_query} skip",
+            summary=f"summary {shared_query}",
+            published_at="2026-03-08T01:00:00Z",
+            captured_at="2026-03-08T09:00:00Z",
+        ),
+    )
+    archived_same_day = client.post(
+        "/api/v1/news",
+        json=_payload(
+            uniq("news_day_archived"),
+            title=f"OpenAI news {shared_query} archived",
+            summary=f"summary {shared_query}",
+            published_at="2026-03-07T16:00:00Z",
+            captured_at="2026-03-08T10:00:00Z",
+        ),
+    )
+    assert on_day.status_code == 201, on_day.text
+    assert off_day.status_code == 201, off_day.text
+    assert archived_same_day.status_code == 201, archived_same_day.text
+
+    archived = client.post(f"/api/v1/news/{archived_same_day.json()['id']}/archive")
+    assert archived.status_code == 200, archived.text
+
+    listed = client.get(
+        "/api/v1/news",
+        params={
+            "page": 1,
+            "page_size": 100,
+            "status": "new",
+            "q": shared_query,
+            "published_from": "2026-03-07T00:00:00Z",
+            "published_to": "2026-03-08T00:00:00Z",
+        },
+    )
+    assert listed.status_code == 200, listed.text
+    items = listed.json()["items"]
+    assert [item["id"] for item in items] == [on_day.json()["id"]]
+
+
 def test_patch_news_updates_content_management_fields_and_sources():
     client = make_client()
     marker = uniq("news_patch")

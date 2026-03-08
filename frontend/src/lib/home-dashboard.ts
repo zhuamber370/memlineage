@@ -22,6 +22,21 @@ export type ChangeSummary = {
   committed_at?: string | null;
 };
 
+export type NewsSourceSummary = {
+  role: "primary" | "reference";
+  url: string;
+};
+
+export type NewsSummary = {
+  id: string;
+  title: string;
+  status: string;
+  published_at?: string | null;
+  captured_at?: string | null;
+  tags?: string[];
+  sources: NewsSourceSummary[];
+};
+
 export type HomeSnapshot = {
   global: {
     taskTotal: number;
@@ -29,6 +44,7 @@ export type HomeSnapshot = {
     p0InProgress: number;
     proposedChanges: number;
     knowledgeTotal: number;
+    newsTotal: number;
   };
   task: {
     blockedCount: number;
@@ -40,6 +56,10 @@ export type HomeSnapshot = {
   knowledge: {
     byCategory: Record<string, number>;
     recent: KnowledgeSummary[];
+  };
+  news: {
+    statusCounts: Record<string, number>;
+    recent: NewsSummary[];
   };
   changes: {
     recentProposed: ChangeSummary[];
@@ -97,6 +117,7 @@ export function rankFocusTasks(tasks: TaskSummary[]): TaskSummary[] {
 export function buildHomeSnapshot(input: {
   tasks: TaskSummary[];
   knowledge: KnowledgeSummary[];
+  news: NewsSummary[];
   changes: ChangeSummary[];
 }): HomeSnapshot {
   const tasks: TaskSummary[] = (Array.isArray(input.tasks) ? input.tasks : []).map((task) => ({
@@ -113,6 +134,24 @@ export function buildHomeSnapshot(input: {
     title: toText(item?.title),
     category: toText(item?.category) || null,
     updated_at: toText(item?.updated_at) || null
+  }));
+  const news: NewsSummary[] = (Array.isArray(input.news) ? input.news : []).map((item) => ({
+    id: toText(item?.id),
+    title: toText(item?.title),
+    status: toText(item?.status),
+    published_at: toText(item?.published_at) || null,
+    captured_at: toText(item?.captured_at) || null,
+    tags: Array.isArray(item?.tags) ? item.tags.filter((tag): tag is string => typeof tag === "string") : [],
+    sources: Array.isArray(item?.sources)
+      ? item.sources
+          .filter((source): source is NewsSourceSummary => {
+            return Boolean(source) && typeof source.url === "string" && typeof source.role === "string";
+          })
+          .map((source) => ({
+            role: source.role === "reference" ? "reference" : "primary",
+            url: source.url
+          }))
+      : []
   }));
   const changes: ChangeSummary[] = (Array.isArray(input.changes) ? input.changes : []).map((item) => ({
     change_set_id: toText(item?.change_set_id),
@@ -146,6 +185,14 @@ export function buildHomeSnapshot(input: {
   const recentKnowledge = [...knowledge]
     .sort((a, b) => toTime(b.updated_at) - toTime(a.updated_at))
     .slice(0, 5);
+  const newsStatusCounts = news.reduce<Record<string, number>>((acc, item) => {
+    const key = item.status || "unknown";
+    acc[key] = (acc[key] ?? 0) + 1;
+    return acc;
+  }, {});
+  const recentNews = [...news]
+    .sort((a, b) => toTime(b.published_at) - toTime(a.published_at) || toTime(b.captured_at) - toTime(a.captured_at))
+    .slice(0, 5);
 
   const recentProposed = [...proposed]
     .sort((a, b) => toTime(b.created_at) - toTime(a.created_at))
@@ -163,7 +210,8 @@ export function buildHomeSnapshot(input: {
       taskInProgress: taskInProgress.length,
       p0InProgress: p0InProgress.length,
       proposedChanges: proposed.length,
-      knowledgeTotal: knowledge.length
+      knowledgeTotal: knowledge.length,
+      newsTotal: news.length
     },
     task: {
       blockedCount: tasks.filter((item) => Boolean(item.blocked_by_task_id)).length,
@@ -175,6 +223,10 @@ export function buildHomeSnapshot(input: {
     knowledge: {
       byCategory,
       recent: recentKnowledge
+    },
+    news: {
+      statusCounts: newsStatusCounts,
+      recent: recentNews
     },
     changes: {
       recentProposed,

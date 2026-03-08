@@ -116,6 +116,8 @@ a {
     radial-gradient(840px 210px at 6% -20%, #deefff 0%, transparent 65%),
     radial-gradient(920px 210px at 98% -18%, #ffe9d8 0%, transparent 66%),
     var(--panel);
+  display: grid;
+  gap: 10px;
 }
 
 .homeDashboardLayout {
@@ -128,6 +130,8 @@ a {
 .homePanel {
   display: grid;
   gap: 10px;
+  min-width: 0;
+  align-content: start;
 }
 
 .homePanelWide {
@@ -135,13 +139,24 @@ a {
 }
 
 .homePanelTask {
-  grid-column: 1 / span 8;
+  grid-column: 1 / span 4;
 }
 
 .homePanelKnowledge {
+  grid-column: 5 / span 4;
+  position: static;
+}
+
+.homePanelNews {
   grid-column: 9 / -1;
-  position: sticky;
-  top: 8px;
+}
+
+.homePanelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .homeMetricRail {
@@ -232,6 +247,7 @@ a {
   max-height: 520px;
   overflow: auto;
   padding-right: 4px;
+  min-width: 0;
 }
 
 .homeFocusItem {
@@ -243,6 +259,42 @@ a {
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
   align-items: center;
+}
+
+.homeNewsList {
+  max-height: 460px;
+}
+
+.homeNewsItem {
+  align-items: flex-start;
+}
+
+.homeNewsItemMain {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.homeNewsTitle {
+  min-width: 0;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.homeInlineLink {
+  color: inherit;
+  text-decoration: none;
+}
+
+.homeInlineLink:hover,
+.homeInlineLink:focus-visible {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}
+
+.homeNewsMeta {
+  font-size: 0.8rem;
 }
 
 .homeFocusActions {
@@ -268,12 +320,16 @@ a {
 
 @media (max-width: 1200px) {
   .homePanelTask {
-    grid-column: 1 / span 7;
+    grid-column: 1 / span 6;
   }
 
   .homePanelKnowledge {
-    grid-column: 8 / -1;
+    grid-column: 7 / -1;
     position: static;
+  }
+
+  .homePanelNews {
+    grid-column: 1 / -1;
   }
 
   .homeFocusList {
@@ -299,6 +355,7 @@ a {
 }
 
 .homeDbSafety {
+  grid-column: 1 / -1;
   gap: 12px;
 }
 
@@ -2208,10 +2265,32 @@ a {
   align-items: flex-start;
 }
 
+.newsHero > div:first-child {
+  min-width: 0;
+  flex: 1 1 260px;
+}
+
 .newsHeroFilters {
   display: grid;
-  grid-template-columns: minmax(220px, 280px) minmax(150px, 180px) minmax(180px, 220px);
+  grid-template-columns: minmax(220px, 1.3fr) minmax(150px, 170px) minmax(160px, 180px) auto;
   gap: 8px;
+  align-items: start;
+  width: min(100%, 920px);
+  flex: 1 1 620px;
+  min-width: 0;
+}
+
+.newsDateFilterGroup {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.newsDateActions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .newsNoticeBar {
@@ -2233,11 +2312,16 @@ a {
   align-items: start;
 }
 
+.newsLayout > * {
+  min-width: 0;
+}
+
 .newsListPanel {
   border: 2px solid var(--line);
   border-radius: 12px;
   background: #fff;
   padding: 10px;
+  min-width: 0;
 }
 
 .newsList {
@@ -2262,12 +2346,26 @@ a {
 }
 
 .newsListRow {
-  grid-template-columns: 1fr auto;
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.newsListRow .knowledgeTitle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.newsStatusBadge {
+  margin-right: 0;
 }
 
 .newsListDeleteButton {
-  align-self: center;
+  align-self: flex-start;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .ideasBoard {
@@ -2530,12 +2628,17 @@ a {
 
   .homePanelWide,
   .homePanelTask,
+  .homePanelNews,
   .homePanelKnowledge {
     grid-column: 1 / -1;
   }
 
   .homePanelKnowledge {
     position: static;
+  }
+
+  .homeDbSafety {
+    grid-column: 1 / -1;
   }
 
   .homeChartGrid {

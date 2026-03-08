@@ -348,6 +348,12 @@ Supporting release docs:
 - Added Home `Database Safety` card with:
   - local backup download (`.mlbk`)
   - local file restore (direct DB overwrite after explicit confirmation)
+- Expanded the Home dashboard global snapshot to include `News Total`.
+- Rebalanced Home board layout into a working row of `Task / Knowledge / News`, with `Database Safety` moved to a full-width lower panel.
+- Added `/news` published-date filtering with single-day bounds and quick actions:
+  - `Today`
+  - `Previous Day`
+  - `Next Day`
 - Backup download now keeps timestamped filename from backend (`memlineage-backup-YYYYMMDD-HHMMSS.mlbk`) in browser fetch flow.
 - PostgreSQL backup/restore now targets business schema only (`public`) to avoid extension ownership conflicts during restore, and logs command stderr summary on failure.
 

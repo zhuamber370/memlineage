@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
@@ -30,9 +31,18 @@ def build_router(get_db_dep):
         page_size: int = Query(default=20, ge=1, le=100),
         status: Optional[str] = None,
         q: Optional[str] = None,
+        published_from: Optional[datetime] = None,
+        published_to: Optional[datetime] = None,
         db: Session = Depends(get_db_dep),
     ):
-        items, total = NewsService(db).list(page=page, page_size=page_size, status=status, q=q)
+        items, total = NewsService(db).list(
+            page=page,
+            page_size=page_size,
+            status=status,
+            q=q,
+            published_from=published_from,
+            published_to=published_to,
+        )
         return {"items": items, "page": page, "page_size": page_size, "total": total}
 
     @router.get("/{news_id}", response_model=NewsOut)

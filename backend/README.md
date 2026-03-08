@@ -84,6 +84,7 @@ python3 -m uvicorn src.app:app --reload --port 8000
 - `news`
   - `POST /api/v1/news`
   - `GET /api/v1/news`
+    - filters: `page`, `page_size`, `status`, `q`, `published_from`, `published_to`
   - `GET /api/v1/news/{news_id}`
   - `PATCH /api/v1/news/{news_id}`
   - `POST /api/v1/news/{news_id}/archive`
@@ -171,6 +172,8 @@ python3 -m uvicorn src.app:app --reload --port 8000
   - `news_items`: core card content/status/timestamps/raw payload
   - `news_sources`: primary/reference source URLs
   - no `topic_id`, no downstream promotion/linkage table
+- `GET /api/v1/news` supports published-time window filtering with `published_from` and `published_to`.
+- The web `/news` page uses those bounds for single-day filtering and quick day stepping in local browser time.
 - `knowledge_items`/`knowledge_evidences` tables may exist in schema history, but runtime knowledge CRUD is currently note-backed.
 - Route graph logs now use unified `entity_logs` storage (`entity_type + entity_id`), while legacy node log responses remain readable for compatibility.
 - Route edges are connector-only links between nodes. They do not carry relation, description, or log metadata.

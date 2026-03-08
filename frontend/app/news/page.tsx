@@ -88,6 +88,32 @@ function hostnameOf(url: string): string {
   }
 }
 
+function localDayBounds(value: string): { publishedFrom: string; publishedTo: string } | null {
+  if (!value.trim()) return null;
+  const parts = value.split("-").map((item) => Number(item));
+  if (parts.length !== 3 || parts.some((part) => !Number.isInteger(part))) return null;
+  const [year, month, day] = parts;
+  const start = new Date(year, month - 1, day, 0, 0, 0, 0);
+  if (Number.isNaN(start.getTime())) return null;
+  const end = new Date(year, month - 1, day + 1, 0, 0, 0, 0);
+  return { publishedFrom: start.toISOString(), publishedTo: end.toISOString() };
+}
+
+function toDateInputValue(date: Date): string {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function shiftLocalDate(value: string, deltaDays: number): string {
+  const parsed = value.trim() ? new Date(`${value}T00:00:00`) : new Date();
+  const base = Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+  base.setHours(0, 0, 0, 0);
+  base.setDate(base.getDate() + deltaDays);
+  return toDateInputValue(base);
+}
+
 function buildNewsDraft(news: NewsItem): NewsDraft {
   const primarySource = news.sources.find((source) => source.role === "primary")?.url || "";
   const references = news.sources.filter((source) => source.role === "reference").map((source) => source.url);
@@ -114,6 +140,7 @@ export default function NewsPage() {
 
   const [statusFilter, setStatusFilter] = useState<NewsStatus | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [publishedDateFilter, setPublishedDateFilter] = useState("");
 
   const [detailDraft, setDetailDraft] = useState<NewsDraft | null>(null);
 
@@ -124,12 +151,7 @@ export default function NewsPage() {
   useEffect(() => {
     void onRefreshList();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    void onRefreshList();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, searchQuery]);
+  }, [statusFilter, searchQuery, publishedDateFilter]);
 
   function statusLabel(status: NewsStatus): string {
     return t(`news.status.${status}`);
@@ -152,6 +174,11 @@ export default function NewsPage() {
       const params = new URLSearchParams({ page: "1", page_size: "100" });
       if (statusFilter !== "all") params.set("status", statusFilter);
       if (searchQuery.trim()) params.set("q", searchQuery.trim());
+      const bounds = localDayBounds(publishedDateFilter);
+      if (bounds) {
+        params.set("published_from", bounds.publishedFrom);
+        params.set("published_to", bounds.publishedTo);
+      }
       const listed = await apiGet<NewsList>(`/api/v1/news?${params.toString()}`);
       const nextItems = listed.items || [];
       setItems(nextItems);
@@ -281,6 +308,14 @@ export default function NewsPage() {
     await deleteNews(newsId, preferredNextId);
   }
 
+  function onFilterToday() {
+    setPublishedDateFilter(toDateInputValue(new Date()));
+  }
+
+  function onShiftFilter(days: number) {
+    setPublishedDateFilter((current) => shiftLocalDate(current, days));
+  }
+
   return (
     <section className="card newsBoard">
       <div className="newsHero">
@@ -302,6 +337,29 @@ export default function NewsPage() {
             <option value="actioned">{t("news.status.actioned")}</option>
             <option value="archived">{t("news.status.archived")}</option>
           </select>
+          <div className="newsDateFilterGroup">
+            <input
+              type="date"
+              value={publishedDateFilter}
+              onChange={(e) => setPublishedDateFilter(e.target.value)}
+              aria-label={t("news.filterDate")}
+              className="taskInput"
+            />
+            <div className="newsDateActions">
+              <button className="badge" onClick={onFilterToday} disabled={loading}>
+                {t("news.filterToday")}
+              </button>
+              <button className="badge" onClick={() => onShiftFilter(-1)} disabled={loading}>
+                {t("news.filterPrevDay")}
+              </button>
+              <button className="badge" onClick={() => onShiftFilter(1)} disabled={loading}>
+                {t("news.filterNextDay")}
+              </button>
+            </div>
+          </div>
+          <button className="badge" onClick={() => void onRefreshList()} disabled={loading}>
+            {t("news.refresh")}
+          </button>
         </div>
       </div>
 
@@ -324,7 +382,7 @@ export default function NewsPage() {
                 >
                   <div className="knowledgeRowMain">
                     <div className="knowledgeTitle">
-                      <span className="badge" style={{ marginRight: 8 }}>{statusLabel(item.status)}</span>
+                      <span className="badge newsStatusBadge">{statusLabel(item.status)}</span>
                       {item.title}
                     </div>
                     <div className="newsRowMeta">

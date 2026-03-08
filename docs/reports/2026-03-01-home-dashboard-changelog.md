@@ -91,6 +91,24 @@
   - `cd backend && python3 -m pytest -q tests/test_db_backup_api.py` (PASS)
   - API round-trip check: `GET /api/v1/admin/db/backup` then `POST /api/v1/admin/db/restore` with same backup blob (PASS)
 
+## 2026-03-08 Home News Watchboard + Day Filter
+- Expanded the global snapshot with `News Total` so the top rail reflects task/change/knowledge/news workload together.
+- Rebalanced the main working row into three columns:
+  - `Task Board`
+  - `Knowledge Board`
+  - `News Watchboard`
+- Moved `Database Safety` into a lower full-width panel to avoid narrow-column crowding.
+- Added `/news` published-date filtering with local single-day bounds:
+  - manual day picker
+  - `Today`
+  - `Previous Day`
+  - `Next Day`
+- Tightened news filter/list spacing and row layout to avoid badge/button overlap in narrow widths.
+- Validation:
+  - `cd backend && python3 -m pytest -q tests/test_news_api.py` (PASS)
+  - `cd backend && python3 -m pytest -q` (PASS)
+  - `cd frontend && npm run build` (PASS)
+
 ## Commit History
 - `6597d5f` feat(frontend): scaffold home dashboard route and nav entry
 - `5fedd5f` feat(frontend): add home dashboard aggregation and focus ranking helpers
