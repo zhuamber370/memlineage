@@ -539,13 +539,15 @@ function TasksPageInner() {
   return (
     <section className="card taskBoard taskBoardV3">
       <div className="taskCommandTop">
-        <div>
+        <div className="taskCommandTopMain">
           <h1 className="h1">{t("tasks.title")}</h1>
           <p className="meta">{t("tasks.subtitle")}</p>
         </div>
-        <div className="taskHeroStat">
-          <span className="meta">{t("tasks.total")}</span>
-          <strong>{total}</strong>
+        <div className="taskCommandTopAside">
+          <div className="taskHeroStat">
+            <span className="meta">{t("tasks.total")}</span>
+            <strong>{total}</strong>
+          </div>
         </div>
       </div>
 

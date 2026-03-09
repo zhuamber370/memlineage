@@ -109,6 +109,26 @@
   - `cd backend && python3 -m pytest -q` (PASS)
   - `cd frontend && npm run build` (PASS)
 
+## 2026-03-09 Agent Workbench UI Refresh
+- Shifted the UI from warm paper cards to a lighter `Agent Workbench` system:
+  - cool neutral background
+  - glass-like rail, page hero, and filter surfaces
+  - solid high-contrast content panels for dense work areas
+- Upgraded the left navigation into grouped `Workspace / System` sections with stronger active-state treatment and a control-surface style brand block.
+- Unified page rhythm across:
+  - `/`
+  - `/tasks`
+  - `/knowledge`
+  - `/news`
+  - `/changes`
+  - `/skills`
+  - `/ideas`
+- Tightened task studio presentation so the queue, studio workspace, and detail drawer read as one operating surface without changing DAG behavior.
+- Kept the Home `News Watchboard` compact by removing recent-news rows and leaving it as a status watch panel that routes into `/news`.
+- Validation:
+  - `cd frontend && npm run build` (PASS)
+  - manual browser checks on `/`, `/tasks`, `/knowledge`, `/news`, `/changes`, `/skills` at desktop/mobile breakpoints (PASS)
+
 ## Commit History
 - `6597d5f` feat(frontend): scaffold home dashboard route and nav entry
 - `5fedd5f` feat(frontend): add home dashboard aggregation and focus ranking helpers

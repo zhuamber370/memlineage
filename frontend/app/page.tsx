@@ -26,15 +26,6 @@ function formatFileSize(size: number): string {
   return `${(size / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-function hostnameOf(url?: string | null): string {
-  if (!url) return "-";
-  try {
-    return new URL(url).hostname || url;
-  } catch {
-    return url;
-  }
-}
-
 function HomeBarChart({
   title,
   data,
@@ -264,27 +255,29 @@ export default function HomeDashboardPage() {
     return `/tasks?${params.toString()}`;
   }
 
-  function newsDetailLink(_newsItem: NewsSummary): string {
-    return "/news";
-  }
-
   const isAnyLoading = tasksLoading || knowledgeLoading || newsLoading || changesLoading;
 
   return (
     <section className="homeDashboard">
       <header className="card homeHero">
-        <h1 className="h1">{t("home.title")}</h1>
-        <p className="meta">{t("home.subtitle")}</p>
-        <div className="badges">
-          <button className="badge" onClick={() => void loadHomeData()} disabled={isAnyLoading}>
-            {isAnyLoading ? t("home.loading") : t("tasks.refresh")}
-          </button>
+        <div className="homePanelHead">
+          <div>
+            <h1 className="h1">{t("home.title")}</h1>
+            <p className="meta">{t("home.subtitle")}</p>
+          </div>
+          <div className="badges">
+            <button className="badge" onClick={() => void loadHomeData()} disabled={isAnyLoading}>
+              {isAnyLoading ? t("home.loading") : t("tasks.refresh")}
+            </button>
+          </div>
         </div>
       </header>
 
       <div className="homeDashboardLayout">
         <section className="card homePanel homePanelWide">
-          <h2 className="changesSubTitle">{t("home.global.title")}</h2>
+          <div className="homePanelHead">
+            <h2 className="changesSubTitle">{t("home.global.title")}</h2>
+          </div>
           <div className="homeMetricRail">
             <Link href="/tasks" className="homeMetricCard">
               <div className="changesSummaryKey">{t("home.global.taskTotal")}</div>
@@ -326,7 +319,12 @@ export default function HomeDashboardPage() {
         </section>
 
         <section className="card homePanel homePanelTask">
-          <h2 className="changesSubTitle">{t("home.tasks.title")}</h2>
+          <div className="homePanelHead">
+            <h2 className="changesSubTitle">{t("home.tasks.title")}</h2>
+            <Link href="/tasks?status=all" className="badge">
+              {t("home.tasks.openTask")}
+            </Link>
+          </div>
           <div className="changesSummaryGrid">
             <div className="changesSummaryCard">
               <div className="changesSummaryKey">{t("home.tasks.blockedCount")}</div>
@@ -374,7 +372,12 @@ export default function HomeDashboardPage() {
         </section>
 
         <section className="card homePanel homePanelKnowledge">
-          <h2 className="changesSubTitle">{t("home.knowledge.title")}</h2>
+          <div className="homePanelHead">
+            <h2 className="changesSubTitle">{t("home.knowledge.title")}</h2>
+            <Link href="/knowledge?status=active" className="badge">
+              {t("home.knowledge.openKnowledge")}
+            </Link>
+          </div>
           <div className="changesSummaryGrid">
             <div className="changesSummaryCard">
               <div className="changesSummaryKey">{t("home.knowledge.total")}</div>
@@ -407,9 +410,6 @@ export default function HomeDashboardPage() {
             ) : (
               <span className="meta">{t("home.empty")}</span>
             )}
-            <Link href="/knowledge?status=active" className="badge">
-              {t("home.knowledge.openKnowledge")}
-            </Link>
           </div>
         </section>
 
@@ -438,43 +438,12 @@ export default function HomeDashboardPage() {
               <div className="changesSummaryValue">{snapshot.news.statusCounts.actioned ?? 0}</div>
             </div>
           </div>
-          <h3 className="changesGroupTitle">{t("home.news.recentTitle")}</h3>
-          <div className="homeList homeFocusList homeNewsList">
-            {newsLoading ? (
-              <p className="meta">{t("home.loading")}</p>
-            ) : newsError ? (
-              <p className="meta" style={{ color: "var(--danger)" }}>
-                {t("home.error")}: {newsError}
-              </p>
-            ) : snapshot.news.recent.length ? (
-              snapshot.news.recent.map((item) => {
-                const primarySource = item.sources.find((source) => source.role === "primary")?.url || "";
-                return (
-                  <article key={item.id} className="homeFocusItem homeNewsItem">
-                    <div className="homeNewsItemMain">
-                      <div className="homeNewsTitle">
-                        <Link href={newsDetailLink(item)} className="homeInlineLink">
-                          {item.title}
-                        </Link>
-                      </div>
-                      <div className="newsRowMeta homeNewsMeta">
-                        <span>{t(`news.status.${item.status}`)}</span>
-                        <span>{t("news.publishedAt")}: {formatDate(item.published_at, lang)}</span>
-                        <span>{hostnameOf(primarySource)}</span>
-                      </div>
-                    </div>
-                    <div className="homeFocusActions">
-                      <Link href={newsDetailLink(item)} className="badge">
-                        {t("home.news.openDetail")}
-                      </Link>
-                    </div>
-                  </article>
-                );
-              })
-            ) : (
-              <p className="meta">{t("home.news.empty")}</p>
-            )}
-          </div>
+          {newsLoading ? <p className="meta">{t("home.loading")}</p> : null}
+          {newsError ? (
+            <p className="meta" style={{ color: "var(--danger)" }}>
+              {t("home.error")}: {newsError}
+            </p>
+          ) : null}
         </section>
 
         <section className="card homePanel homeDbSafety">

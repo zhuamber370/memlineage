@@ -337,6 +337,12 @@ Supporting release docs:
 
 ## Latest on main (Unreleased)
 
+- Reframed the frontend as a lighter `Agent Workbench` with:
+  - glass-style left rail
+  - glass page hero / filter bars
+  - higher-contrast solid working panels for dense content areas
+- Unified Home, Tasks, Knowledge, News, Changes, Skills, and Ideas under the same workbench visual language without changing routes or backend contracts.
+- Strengthened `/tasks` studio presentation so list management, studio workspace, and detail drawer read as one coherent execution surface.
 - Added manual detect flow with auto runtime path fallback for skill operations.
 - Added Skill Management UI runtime actions for both OpenClaw and Codex:
   - install / uninstall
@@ -354,6 +360,7 @@ Supporting release docs:
   - `Today`
   - `Previous Day`
   - `Next Day`
+- Removed recent-news clutter from the home `News Watchboard`, keeping it as a compact status board with a clean handoff into `/news`.
 - Backup download now keeps timestamped filename from backend (`memlineage-backup-YYYYMMDD-HHMMSS.mlbk`) in browser fetch flow.
 - PostgreSQL backup/restore now targets business schema only (`public`) to avoid extension ownership conflicts during restore, and logs command stderr summary on failure.
 

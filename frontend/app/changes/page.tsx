@@ -269,24 +269,28 @@ export default function ChangesPage() {
   }
 
   return (
-    <section className="card">
-      <h1 className="h1">{t("changes.title")}</h1>
-      <p className="meta">{t("changes.subtitle")}</p>
+    <section className="card changesPage">
+      <header className="changesHero">
+        <div>
+          <h1 className="h1">{t("changes.title")}</h1>
+          <p className="meta">{t("changes.subtitle")}</p>
+        </div>
 
-      <div className="badges" style={{ marginTop: 12 }}>
-        <button className="badge" onClick={() => loadInbox()} disabled={pending !== ""}>
-          {pending === "refresh" ? `${t("changes.refreshInbox")}...` : t("changes.refreshInbox")}
-        </button>
-        <button className="badge" onClick={onCommitSelected} disabled={pending !== "" || !selectedId}>
-          {pending === "commit" ? t("changes.pendingCommit") : t("changes.commitSelected")}
-        </button>
-        <button className="badge" onClick={onRejectSelected} disabled={pending !== "" || !selectedId}>
-          {pending === "reject" ? t("changes.pendingReject") : t("changes.rejectSelected")}
-        </button>
-        <button className="badge" onClick={onUndoLast} disabled={pending !== ""}>
-          {pending === "undo" ? t("changes.pendingUndo") : t("changes.undo")}
-        </button>
-      </div>
+        <div className="changesHeroActions">
+          <button className="badge" onClick={() => loadInbox()} disabled={pending !== ""}>
+            {pending === "refresh" ? `${t("changes.refreshInbox")}...` : t("changes.refreshInbox")}
+          </button>
+          <button className="badge" onClick={onCommitSelected} disabled={pending !== "" || !selectedId}>
+            {pending === "commit" ? t("changes.pendingCommit") : t("changes.commitSelected")}
+          </button>
+          <button className="badge" onClick={onRejectSelected} disabled={pending !== "" || !selectedId}>
+            {pending === "reject" ? t("changes.pendingReject") : t("changes.rejectSelected")}
+          </button>
+          <button className="badge" onClick={onUndoLast} disabled={pending !== ""}>
+            {pending === "undo" ? t("changes.pendingUndo") : t("changes.undo")}
+          </button>
+        </div>
+      </header>
 
       {error ? <p className="meta" style={{ color: "var(--danger)", marginTop: 10 }}>{error}</p> : null}
       {notice ? <p className="meta" style={{ color: "var(--success)", marginTop: 10 }}>{notice}</p> : null}

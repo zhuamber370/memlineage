@@ -368,6 +368,10 @@ export default function NewsPage() {
 
       <div className="newsLayout">
         <div className="newsListPanel">
+          <div className="knowledgePanelHead">
+            <h2 className="changesSubTitle">{t("news.title")}</h2>
+            <span className="meta">{items.length}</span>
+          </div>
           <div className="newsList">
             {items.map((item) => {
               const primarySource = item.sources.find((source) => source.role === "primary")?.url || "";
@@ -403,7 +407,10 @@ export default function NewsPage() {
         </div>
 
         <aside className="knowledgeDetail">
-          <h2 className="changesSubTitle">{t("news.detail")}</h2>
+          <div className="knowledgeDetailHead">
+            <h2 className="changesSubTitle">{t("news.detail")}</h2>
+            {selectedDetail ? <span className="badge newsStatusBadge">{statusLabel(selectedDetail.status)}</span> : null}
+          </div>
           {selectedDetail && detailDraft ? (
             <div className="knowledgeDetailContent">
               <div className="knowledgeDetailTitle">{selectedDetail.title}</div>

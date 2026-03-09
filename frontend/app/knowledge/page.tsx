@@ -282,6 +282,10 @@ export default function KnowledgePage() {
 
       <div className="knowledgeLayout" style={{ gridTemplateColumns: "1fr 1.3fr" }}>
         <div className="knowledgeListPanel">
+          <div className="knowledgePanelHead">
+            <h2 className="changesSubTitle">{t("knowledge.title")}</h2>
+            <span className="meta">{items.length}</span>
+          </div>
           {error ? <p className="meta" style={{ color: "var(--danger)", marginTop: 8 }}>{error}</p> : null}
           {notice ? <p className="meta" style={{ color: "var(--success)", marginTop: 8 }}>{notice}</p> : null}
           <div className="knowledgeList">
@@ -311,7 +315,14 @@ export default function KnowledgePage() {
         </div>
 
         <aside className="knowledgeDetail">
-          <h2 className="changesSubTitle">{t("knowledge.detail")}</h2>
+          <div className="knowledgeDetailHead">
+            <h2 className="changesSubTitle">{t("knowledge.detail")}</h2>
+            {selectedDetail ? (
+              <span className="badge">
+                {selectedDetail.status === "archived" ? t("knowledge.statusArchived") : t("knowledge.statusActive")}
+              </span>
+            ) : null}
+          </div>
           {selectedDetail ? (
             <div className="knowledgeDetailContent">
               <div className="knowledgeDetailTitle">{selectedDetail.title}</div>

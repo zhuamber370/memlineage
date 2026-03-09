@@ -210,14 +210,18 @@ export default function SkillsPage() {
   return (
     <section className="skillsPage">
       <header className="card skillsHero">
-        <h1 className="h1">{t("skills.title")}</h1>
-        <p className="meta">{t("skills.subtitle")}</p>
-        <p className="meta skillsLocalOnly">{t("skills.localOnly")}</p>
-        <div className="badges">
-          <button className="badge" onClick={() => void refreshAll()} disabled={hasAnyLoading}>
-            {hasAnyLoading ? t("skills.loading") : t("skills.refreshAll")}
-          </button>
+        <div className="skillsHeroHead">
+          <div>
+            <h1 className="h1">{t("skills.title")}</h1>
+            <p className="meta">{t("skills.subtitle")}</p>
+          </div>
+          <div className="badges">
+            <button className="badge" onClick={() => void refreshAll()} disabled={hasAnyLoading}>
+              {hasAnyLoading ? t("skills.loading") : t("skills.refreshAll")}
+            </button>
+          </div>
         </div>
+        <p className="meta skillsLocalOnly">{t("skills.localOnly")}</p>
         {globalError ? (
           <p className="meta" style={{ color: "var(--danger)" }}>
             {t("skills.error")}: {globalError}

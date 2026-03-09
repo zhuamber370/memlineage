@@ -192,14 +192,25 @@ export default function IdeasPage() {
 
   return (
     <div className="card ideasBoard">
-      <h1 className="h1">{t("ideas.title")}</h1>
-      <p className="meta">{t("ideas.subtitle")}</p>
-      {!taskId ? <p className="meta">{t("ideas.contextRequired")}</p> : null}
-      {taskId ? (
-        <p className="meta">
-          {t("ideas.contextTask")}: {taskId}
-        </p>
-      ) : null}
+      <header className="ideasHero">
+        <div>
+          <h1 className="h1">{t("ideas.title")}</h1>
+          <p className="meta">{t("ideas.subtitle")}</p>
+          {!taskId ? <p className="meta">{t("ideas.contextRequired")}</p> : null}
+          {taskId ? (
+            <p className="meta">
+              {t("ideas.contextTask")}: {taskId}
+            </p>
+          ) : null}
+        </div>
+        {taskId ? (
+          <div className="badges">
+            <button className="badge" disabled={loading} onClick={onRefresh}>
+              {t("ideas.refresh")}
+            </button>
+          </div>
+        ) : null}
+      </header>
 
       {error ? <p style={{ color: "var(--danger)" }}>{error}</p> : null}
       {notice ? <p style={{ color: "var(--success)" }}>{notice}</p> : null}
@@ -231,9 +242,6 @@ export default function IdeasPage() {
         />
         <button className="badge" disabled={loading} onClick={onCreateIdea}>
           {t("ideas.create")}
-        </button>
-        <button className="badge" disabled={loading} onClick={onRefresh}>
-          {t("ideas.refresh")}
         </button>
         <textarea
           className="taskInput taskTextArea ideasCreateWide"

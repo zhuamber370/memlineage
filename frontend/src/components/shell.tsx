@@ -22,6 +22,8 @@ type ChangeCountResp = { total?: number };
 export function AppShell({ children }: { children: ReactNode }) {
   const { lang, setLang, t } = useI18n();
   const [proposedChangeCount, setProposedChangeCount] = useState(0);
+  const workspaceLinks = links.filter((link) => link.href !== "/skills");
+  const systemLinks = links.filter((link) => link.href === "/skills");
 
   useEffect(() => {
     let active = true;
@@ -55,8 +57,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="shell">
       <aside className="rail">
-        <div className="brand">MEMLINEAGE / AGENT-FIRST</div>
-        <div className="badges" style={{ marginTop: 6, marginBottom: 10 }}>
+        <div className="railTop">
+          <div className="railEyebrow">AGENT WORKBENCH</div>
+          <div className="brand">MemLineage</div>
+          <p className="meta railTagline">{t("shell.tagline")}</p>
+        </div>
+        <div className="badges railLangSwitch">
           <button
             className="badge"
             onClick={() => setLang("en")}
@@ -74,20 +80,37 @@ export function AppShell({ children }: { children: ReactNode }) {
             {t("lang.zh")}
           </button>
         </div>
-        {links.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className={`navLink ${link.href === "/changes" && proposedChangeCount > 0 ? "navLinkAlert" : ""}`}
-          >
-            <span className="navLinkInner">
-              <span>{t(link.key)}</span>
-              {link.href === "/changes" && proposedChangeCount > 0 ? (
-                <span className="navLinkCount">{proposedChangeCount}</span>
-              ) : null}
-            </span>
-          </Link>
-        ))}
+        <div className="railSection">
+          <div className="railSectionLabel">{t("nav.group.workspace")}</div>
+          <nav className="railNav">
+            {workspaceLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`navLink ${link.href === "/changes" && proposedChangeCount > 0 ? "navLinkAlert" : ""}`}
+              >
+                <span className="navLinkInner">
+                  <span>{t(link.key)}</span>
+                  {link.href === "/changes" && proposedChangeCount > 0 ? (
+                    <span className="navLinkCount">{proposedChangeCount}</span>
+                  ) : null}
+                </span>
+              </Link>
+            ))}
+          </nav>
+        </div>
+        <div className="railSection">
+          <div className="railSectionLabel">{t("nav.group.system")}</div>
+          <nav className="railNav">
+            {systemLinks.map((link) => (
+              <Link key={link.href} href={link.href} className="navLink">
+                <span className="navLinkInner">
+                  <span>{t(link.key)}</span>
+                </span>
+              </Link>
+            ))}
+          </nav>
+        </div>
       </aside>
       <main className="main">{children}</main>
     </div>
