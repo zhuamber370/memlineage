@@ -1,6 +1,7 @@
 # Backend
 
 FastAPI backend for MemLineage.
+Use this file as the runtime reference for backend setup, API surface, and backend-specific operational notes.
 
 ## Environment
 
@@ -42,7 +43,10 @@ export KMS_API_KEY="<your_api_key>"
 python3 -m uvicorn src.app:app --reload --port 8000
 ```
 
-## API Surface (Synced 2026-03-01)
+## API Surface (Synced 2026-03-19)
+
+This section is the current backend route summary.
+For product-level positioning, use the root [README.md](../README.md).
 
 ### Core domains
 - `topics`
@@ -197,8 +201,9 @@ python3 -m pytest -q
 Targeted:
 
 ```bash
-python3 -m pytest -q backend/tests/test_changes_api.py
-python3 -m pytest -q backend/tests/test_agent_api_exposure.py
+cd backend
+python3 -m pytest -q tests/test_changes_api.py
+python3 -m pytest -q tests/test_agent_api_exposure.py
 ```
 
 ## Scripts

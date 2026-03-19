@@ -1,6 +1,7 @@
 # Docs Index
 
-This is the documentation entrypoint for MemLineage.
+Use this index to find the right source of truth for MemLineage.
+The root [README](../README.md) explains the product; the runtime docs below explain current behavior.
 
 ## Start Here
 
@@ -12,11 +13,11 @@ This is the documentation entrypoint for MemLineage.
 
 ## Runtime Contracts (Authoritative)
 
-Use these as source of truth for current behavior:
+Use these when you need exact current behavior:
 - Backend runtime: [../backend/README.md](../backend/README.md)
 - Frontend runtime: [../frontend/README.md](../frontend/README.md)
 - Agent API surface: [guides/agent-api-surface.md](guides/agent-api-surface.md)
-- OpenClaw skill contract: [../skills/memlineage/SKILL.md](../skills/memlineage/SKILL.md)
+- MemLineage skill contract: [../skills/memlineage/SKILL.md](../skills/memlineage/SKILL.md)
 
 ## Validation and Proof
 

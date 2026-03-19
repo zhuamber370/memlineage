@@ -1,6 +1,7 @@
 # Dev Setup (Contributors)
 
 This guide is optimized for getting a new contributor to a working local environment quickly.
+If you need product context first, start with [../../README.md](../../README.md).
 
 ## Prerequisites
 

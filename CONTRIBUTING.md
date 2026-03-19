@@ -2,7 +2,8 @@
 
 Thanks for contributing to **MemLineage**.
 
-MemLineage is an OpenClaw workflow command center where **agent proposals are governed by human review** (with audit + undo). Contributions that improve reliability, clarity, and contributor experience are especially welcome.
+MemLineage is a shared workspace for solo developers working with agents. Humans use the web UI directly, while agents access the same backend through skills. Contributions that improve task and knowledge workflows, skill integration, write safety, and contributor experience are especially welcome.
+This file is the quickest path to where contributions are most useful right now.
 
 ## Quick start for contributors
 
@@ -20,10 +21,11 @@ If you want to contribute but feel blocked, comment on the relevant issue — ma
 
 ## Where help is most valuable (early stage)
 
+- **Tasks workspace** (`/tasks`): CRUD, batch operations, route graph, status, inspector UX
+- **Knowledge workspace** (`/knowledge`): CRUD, filters, category/status lifecycle
+- **Skill integration** (`/skills` + runtime bundle): install/detect/update flows for Codex and OpenClaw
 - **Governed write pipeline**: dry-run → commit/reject → undo-last
 - **Changes review UX** (`/changes`): diff readability, safety checks, undo clarity
-- **Tasks route graph** (`/tasks`): node/edge operations, status, inspector UX
-- **Knowledge workspace** (`/knowledge`): CRUD, filters, category/status lifecycle
 - **Docs**: API surface accuracy, onboarding guides, screenshots using synthetic test data
 
 ## Before opening a PR

@@ -3,6 +3,7 @@
 Use this checklist before allowing agent writes into persistent systems.
 
 This page is implementation-agnostic. You can use it with MemLineage or map it to your own control plane.
+Use the root README for product overview; use this page for write-safety controls.
 
 ## 1) Scope and Risk Classification
 

@@ -1,8 +1,10 @@
 # Skill (Legacy Python Helpers)
 
 This directory contains legacy Python helper scripts used during early integration.
+It is not the current production skill bundle used by Codex or OpenClaw.
+If you need the active runtime bundle, use `skills/memlineage`.
 
-Current production path for OpenClaw is the native workspace skill bundle:
+Current production bundle:
 - `<repo_root>/skills/memlineage`
 
 OpenClaw install/uninstall commands:

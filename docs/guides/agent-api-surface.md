@@ -1,9 +1,11 @@
 > Documentation Status: Current
-> Last synced: 2026-02-27
+> Last synced: 2026-03-19
 
 # Agent API Surface (MemLineage)
 
 This document defines the current agent-facing API contract.
+Use it when implementing or verifying a MemLineage agent integration.
+This is a runtime contract document, not a product overview.
 
 ## 1) Read APIs (direct read)
 
@@ -23,6 +25,10 @@ This document defines the current agent-facing API contract.
 - `GET /api/v1/inbox`
 - `GET /api/v1/inbox/{inbox_id}`
 
+### News
+- `GET /api/v1/news`
+- `GET /api/v1/news/{news_id}`
+
 ### Journals
 - `GET /api/v1/journals`
 - `GET /api/v1/journals/{journal_date}`
@@ -40,9 +46,9 @@ This document defines the current agent-facing API contract.
 - `GET /api/v1/context/bundle`
 - `GET /api/v1/audit/events`
 
-## 2) Write governance flow
+## 2) Agent Write Governance Flow
 
-All agent writes should use governed write flow:
+All agent-originated writes should use the governed write flow:
 
 1. `POST /api/v1/changes/dry-run`
 2. Wait for human approval
@@ -50,7 +56,7 @@ All agent writes should use governed write flow:
 4. Or reject: `DELETE /api/v1/changes/{change_set_id}`
 5. Rollback when needed: `POST /api/v1/commits/undo-last`
 
-## 3) Dry-run action types
+## 3) Dry-Run Action Types
 
 `actions[].type` currently supports:
 
@@ -83,7 +89,7 @@ All agent writes should use governed write flow:
 - `delete_link`
 - `capture_inbox`
 
-## 4) Action family notes
+## 4) Action Family Notes
 
 ### Task + note basics
 - `create_task`: create a new task.
@@ -119,7 +125,7 @@ All agent writes should use governed write flow:
 - `create_link`, `delete_link`
 - `capture_inbox`
 
-## 5) Core payload envelopes
+## 5) Core Payload Envelopes
 
 ### Dry-run request
 
@@ -141,6 +147,10 @@ All agent writes should use governed write flow:
 }
 ```
 
+Note:
+- `status: "todo"` is the current API enum for a not-started task.
+- Product docs may say "task" in user-facing wording, but the runtime enum remains `todo`.
+
 ### Commit request
 
 ```json
@@ -160,7 +170,7 @@ All agent writes should use governed write flow:
 }
 ```
 
-## 6) OpenClaw skill mapping
+## 6) MemLineage Skill Mapping (Codex + OpenClaw)
 
 Production skill path:
 - `skills/memlineage/SKILL.md`
@@ -174,7 +184,7 @@ Action mapping:
 - `reject_changes` calls reject API.
 - `undo_last_commit` calls undo API.
 
-## 7) Compatibility note
+## 7) Compatibility Note
 
 Historical docs that mention `playbook|decision|brief` knowledge typing or `/api/v1/knowledge/migration/*` are not current runtime contracts.
 Current runtime contract is this document + API schemas in `backend/src/schemas.py`.

@@ -13,7 +13,8 @@ metadata:
 
 # MemLineage Skill
 
-Use this skill when you need to read or write MemLineage data.
+Use this skill when you need to read or write MemLineage workspace data.
+This file is the runtime contract for the bundled MemLineage skill.
 
 ## Activation Priority (MUST)
 
@@ -62,7 +63,7 @@ Use this skill when you need to read or write MemLineage data.
 - Include `source`/`source_ref` whenever the target action supports it.
 
 8. Task topic safety
-- For `propose_record_todo`, ensure `topic_id` is present (explicit or inferred/fallback).
+- For `propose_record_todo` (legacy action name for task proposal), ensure `topic_id` is present (explicit or inferred/fallback).
 
 ## Natural-Language Routing (MUST)
 
@@ -92,7 +93,7 @@ Use this skill when you need to read or write MemLineage data.
 
 Use these mappings as default behavior:
 
-1. "Which todos should I prioritize today?"
+1. "Which tasks should I prioritize today?"
 - Use `list_tasks` + optional `list_task_views_summary`, then answer in natural language.
 
 2. "Which node is this task currently on?"
@@ -234,9 +235,12 @@ If code is unknown:
 - `reject_changes`
 - `undo_last_commit`
 
+Note:
+- `propose_record_todo` is the legacy action name used for task proposal create/update.
+
 ## Environment
 
-Set before starting OpenClaw:
+Set before starting the runtime:
 
 ```bash
 export KMS_BASE_URL="http://127.0.0.1:8000"
@@ -248,6 +252,9 @@ Optional:
 ```bash
 export KMS_ACTOR_ID="openclaw"
 ```
+
+If you want runtime attribution to show a different actor label, set `KMS_ACTOR_ID` explicitly.
+For product overview and local app setup, use the root [README.md](../../README.md).
 
 ## News Notes
 
